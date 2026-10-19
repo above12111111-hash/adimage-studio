@@ -39,7 +39,6 @@ export default function AdImageStudio() {
           </div>
         </div>
 
-        {/* Navigation Tabs */}
         <nav className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-sm">
           <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-medium shadow-sm">
             <Sparkles className="w-4 h-4" /> Генератор
@@ -75,7 +74,7 @@ export default function AdImageStudio() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
-                Текстовий запит (Prompt)
+                Текстовий запит (PROMPT)
               </label>
               <button className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium transition">
                 <Sparkles className="w-3 h-3" /> Покращити промпт
@@ -90,7 +89,7 @@ export default function AdImageStudio() {
             />
           </div>
 
-          {/* Niche Selection */}
+          {/* Niche Selection - Розширений список */}
           <div className="space-y-2">
             <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
               Ніша / Тематика
@@ -100,15 +99,22 @@ export default function AdImageStudio() {
               onChange={(e) => setNiche(e.target.value)}
               className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition"
             >
-              <option value="Краса та б'юті">Краса та б'юті</option>
-              <option value="Нерухомість">Нерухомість & Інтер'єр</option>
-              <option value="E-commerce / Товарка">E-commerce / Товарка</option>
-              <option value="Послуги & Консалтинг">Послуги & Консалтинг</option>
-              <option value="Фитнес & Здоров'я">Фитнес & Здоров'я</option>
+              <option value="Краса та б'юті">Краса та б'юті (Косметика, Догляд, Салони)</option>
+              <option value="Нерухомість">Нерухомість & Дизайн інтер'єру</option>
+              <option value="E-commerce / Товарка">E-commerce / Товарний бізнес</option>
+              <option value="Одяг та мода">Одяг, Взуття та Аксесуари</option>
+              <option value="Ресторани та їжа">Ресторани, Кафе та Доставка їжі</option>
+              <option value="Стоматологія та медицина">Стоматологія & Медичні послуги</option>
+              <option value="Послуги & Консалтинг">Послуги, Юриспруденція & Консалтинг</option>
+              <option value="Фитнес & Здоров'я">Фитнес, Спорт & Здорове харчування</option>
+              <option value="Автобізнес">Автосалони, Детейлінг & СТО</option>
+              <option value="Освіта та інфобізнес">Освіта, Курси & Інфобізнес</option>
+              <option value="Туризм та готелі">Туризм, Готелі & Відпочинок</option>
+              <option value="IT & Стартапи">IT, Софт & Цифрові продукти</option>
             </select>
           </div>
 
-          {/* Format / Aspect Ratio */}
+          {/* Aspect Ratio */}
           <div className="space-y-2">
             <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
               Формат / Платформа
@@ -139,7 +145,7 @@ export default function AdImageStudio() {
             </div>
           </div>
 
-          {/* Visual Style */}
+          {/* Visual Style - Розширений список */}
           <div className="space-y-2">
             <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
               Візуальний стиль
@@ -149,11 +155,16 @@ export default function AdImageStudio() {
               onChange={(e) => setStyle(e.target.value)}
               className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition"
             >
-              <option value="Фотореалізм">Фотореалізм</option>
+              <option value="Фотореалізм">Фотореалізм (Photorealistic)</option>
               <option value="Студійна зйомка">Студійна зйомка (Studio Lighting)</option>
-              <option value="3D Рендер">3D Рендер / Мінімалізм</option>
-              <option value="Вектор / Ілюстрація">Вектор / Ілюстрація</option>
-              <option value="Lifestyle">Lifestyle / Кадри з життя</option>
+              <option value="Люксовий глянцевий">Люксовий глянцевий (Commercial / High-End)</option>
+              <option value="3D Рендер / Мінімалізм">3D Рендер / Мінімалізм</option>
+              <option value="Вектор / Ілюстрація">Вектор / Графічна Ілюстрація</option>
+              <option value="Lifestyle">Lifestyle / Живі кадри з людьми</option>
+              <option value="Кинематографічний">Кінематографічний (Cinematic Mood)</option>
+              <option value="Неон & Хайтек">Неон & Хайтек (Cyberpunk / Modern Tech)</option>
+              <option value="Flat Lay">Flat Lay / Розкладка зверху</option>
+              <option value="Макро / Деталізація">Макрозйомка / Текстури та деталі</option>
             </select>
           </div>
 
@@ -179,7 +190,7 @@ export default function AdImageStudio() {
             </div>
           </div>
 
-          {/* Empty Space for Text */}
+          {/* Text Space */}
           <div className="space-y-2">
             <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
               Порожнє місце під текст
@@ -190,14 +201,15 @@ export default function AdImageStudio() {
               className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition"
             >
               <option value="Без зарезервованого місця">Без зарезервованого місця</option>
-              <option value="Зверху">Зверху (для заголовка)</option>
-              <option value="Знизу">Знизу (для оферу)</option>
+              <option value="Зверху">Зверху (для заголовка / плашки)</option>
+              <option value="Знизу">Знизу (для оферу / кнопки)</option>
               <option value="Зліва">Зліва (для текстового блоку)</option>
               <option value="Справа">Справа (для текстового блоку)</option>
+              <option value="Центральний об'єкт з розмитим фоном">Центральний об'єкт з розмитим фоном</option>
             </select>
           </div>
 
-          {/* Variants Count & Quality */}
+          {/* Variants Count & Quality - Розширені варіанти якості */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
@@ -231,15 +243,16 @@ export default function AdImageStudio() {
               >
                 <option value="Стандарт (Рекомендовано)">Стандарт (Рекомендовано)</option>
                 <option value="Висока (4K)">Висока (4K)</option>
-                <option value="Ультра (8K)">Ультра (8K)</option>
+                <option value="Ультра (8K)">Ультра (8K / Studio Render)</option>
+                <option value="Максимальна (8K RAW & Fine Detail)">Максимальна (8K RAW / Fine Detail)</option>
               </select>
             </div>
           </div>
 
-          {/* Image-to-Image / Reference Photo */}
+          {/* Reference Image */}
           <div className="space-y-2">
             <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
-              Референсне фото / Товар (Image-to-Image)
+              РЕФЕРЕНСНЕ ФОТО / ТОБАР (IMAGE-TO-IMAGE)
             </label>
             <div className="border-2 border-dashed border-slate-800 hover:border-slate-700 rounded-xl p-4 text-center cursor-pointer bg-slate-950/30 transition">
               <Upload className="w-5 h-5 mx-auto text-slate-400 mb-1" />
@@ -275,7 +288,6 @@ export default function AdImageStudio() {
 
           {/* Gallery Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Example Card 1 */}
             <div className="bg-[#0d1322] border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-slate-700 transition">
               <div className="relative aspect-square bg-slate-900 flex items-center justify-center overflow-hidden">
                 <span className="absolute top-3 left-3 bg-black/60 backdrop-blur text-[10px] font-mono px-2 py-1 rounded text-white font-bold">
@@ -310,7 +322,6 @@ export default function AdImageStudio() {
               </div>
             </div>
 
-            {/* Example Card 2 */}
             <div className="bg-[#0d1322] border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-slate-700 transition">
               <div className="relative aspect-square bg-slate-900 flex items-center justify-center overflow-hidden">
                 <span className="absolute top-3 left-3 bg-black/60 backdrop-blur text-[10px] font-mono px-2 py-1 rounded text-white font-bold">
