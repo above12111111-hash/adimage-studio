@@ -32,7 +32,6 @@ export default function AdImageStudio() {
     "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60"
   ]);
 
-  // Функція генерації
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       alert("Будь ласка, введіть описовий промпт перед генерацією!");
@@ -152,12 +151,20 @@ export default function AdImageStudio() {
               <option value="Нерухомість">Нерухомість & Дизайн інтер'єру</option>
               <option value="E-commerce / Товарка">E-commerce / Товарний бізнес</option>
               <option value="Одяг та мода">Одяг, Взуття та Аксесуари</option>
-              <option value="Ресторани та їжа">Ресторани, Кафе та Доставка їжі</option>
+              <option value="Ювелірні вироби">Ювелірні вироби & Годинники</option>
+              <option value="Ресторани та їжа">Ресторани, Кафе & Доставка їжі</option>
               <option value="Стоматологія та медицина">Стоматологія & Медичні послуги</option>
               <option value="Послуги & Консалтинг">Послуги, Юриспруденція & Консалтинг</option>
               <option value="Фитнес & Здоров'я">Фитнес, Спорт & Здорове харчування</option>
-              <option value="Автобізнес">Автосалони, Детейлінг & СТО</option>
-              <option value="Освіта та інфобізнес">Освіта, Курси & Інфобізнес</option>
+              <option value="Автобізнес">Автосалони, Детейлінг, СТО & Автопрокат</option>
+              <option value="Освіта та інфобізнес">Освіта, Онлайн-курси & Інфобізнес</option>
+              <option value="Туризм та готелі">Туризм, Готелі & Відпочинок</option>
+              <option value="IT & Стартапи">IT, Софт & Цифрові продукти</option>
+              <option value="Крипто & Web3">Крипто, Фінанси & Трейдинг</option>
+              <option value="Дитячі товари">Дитячі товари & Іграшки</option>
+              <option value="Зоотовари">Зоотовари & Ветклініки</option>
+              <option value="Будівництво та ремонт">Будівництво, Майстри & Ремонт</option>
+              <option value="Універсальна рекламний банер">Універсальний рекламний банер</option>
             </select>
           </div>
 
@@ -203,12 +210,18 @@ export default function AdImageStudio() {
               className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition"
             >
               <option value="Фотореалізм">Фотореалізм (Photorealistic)</option>
-              <option value="Студійна зйомка">Студійна зйомка (Studio Lighting)</option>
-              <option value="Люксовий глянцевий">Люксовий глянцевий (Commercial / High-End)</option>
+              <option value="Студійна зйомка">Студійна зйомка (Studio Soft Light)</option>
+              <option value="Люксовий глянцевий">Люксовий глянцевий (Commercial / Premium)</option>
               <option value="3D Рендер / Мінімалізм">3D Рендер / Мінімалізм</option>
               <option value="Вектор / Ілюстрація">Вектор / Графічна Ілюстрація</option>
-              <option value="Lifestyle">Lifestyle / Живі кадри з людьми</option>
-              <option value="Кинематографічний">Кінематографічний (Cinematic Mood)</option>
+              <option value="Lifestyle">Lifestyle / Кадри з живими людьми</option>
+              <option value="Кинематографічний">Кінематографічний (Cinematic Drama)</option>
+              <option value="Неон & Хайтек">Неон & Хайтек (Cyberpunk / Modern Tech)</option>
+              <option value="Flat Lay">Flat Lay / Розкладка товарів зверху</option>
+              <option value="Макро / Деталізація">Макрозйомка / Текстури та деталі</option>
+              <option value="Ретро / Вінтаж">Ретро / Вінтаж (80s / Film Grain)</option>
+              <option value="Мінімалістичний поп-арт">Мінімалістичний Поп-арт</option>
+              <option value="Абстрактна естетика">Абстрактна естетика & Геометрія</option>
             </select>
           </div>
 
@@ -218,11 +231,11 @@ export default function AdImageStudio() {
               Настрій & Палітра
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {["Тепла", "Холодна", "Пастельна", "Контрастна", "Монохром", "Колір бренду"].map((item) => (
+              {["Тепла", "Холодна", "Пастельна", "Контрастна", "Монохром", "Колір бренду", "Темна люкс", "Яскрава / Неонова", "Природна / Нюд"].map((item) => (
                 <button
                   key={item}
                   onClick={() => setMood(item)}
-                  className={`py-2 px-2 text-xs rounded-xl border text-center transition font-medium ${
+                  className={`py-2 px-1.5 text-[11px] rounded-xl border text-center transition font-medium ${
                     mood === item
                       ? "bg-indigo-600/20 border-indigo-500 text-indigo-300"
                       : "bg-slate-950/40 border-slate-800/80 text-slate-400 hover:border-slate-700"
@@ -249,6 +262,8 @@ export default function AdImageStudio() {
               <option value="Знизу">Знизу (для оферу / кнопки)</option>
               <option value="Зліва">Зліва (для текстового блоку)</option>
               <option value="Справа">Справа (для текстового блоку)</option>
+              <option value="Центральний об'єкт з розмитим фоном">Центральний об'єкт з розмитим фоном</option>
+              <option value="Рамка / Вільні краї навколо">Рамка / Вільні краї навколо</option>
             </select>
           </div>
 
@@ -285,8 +300,9 @@ export default function AdImageStudio() {
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition"
               >
                 <option value="Стандарт (Рекомендовано)">Стандарт (Рекомендовано)</option>
-                <option value="Висока (4K)">Висока (4K)</option>
-                <option value="Ультра (8K)">Ультра (8K)</option>
+                <option value="Висока (4K HD)">Висока (4K HD)</option>
+                <option value="Ультра (8K Studio Render)">Ультра (8K Studio Render)</option>
+                <option value="Максимальна (8K RAW & Fine Detail)">Максимальна (8K RAW Fine Detail)</option>
               </select>
             </div>
           </div>
@@ -302,7 +318,7 @@ export default function AdImageStudio() {
             </div>
           </div>
 
-          {/* Submit Button з функцією onClick */}
+          {/* Submit Button */}
           <button 
             onClick={handleGenerate}
             disabled={loading}
@@ -368,7 +384,7 @@ export default function AdImageStudio() {
                         href={imgUrl} 
                         target="_blank" 
                         download={`creative-${index + 1}.png`} 
-                        className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition"
+                        className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition text-center"
                       >
                         <Download className="w-3.5 h-3.5" /> Завантажити
                       </a>
