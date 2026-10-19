@@ -25,7 +25,7 @@ export default function AdImageStudio() {
   const [activeTab, setActiveTab] = useState("generator");
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
-  // Синхронізація з кнопками браузера "Назад" та "Вперед"
+  // Синхронізація з кнопками браузера "Назад" / "Вперед"
   useEffect(() => {
     const handlePopState = () => {
       const hash = window.location.hash.replace("#", "");
@@ -42,12 +42,11 @@ export default function AdImageStudio() {
     };
 
     window.addEventListener("popstate", handlePopState);
-    handlePopState(); // Ініціалізація при завантаженні
+    handlePopState();
 
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // Перемикання вкладок із записом в історію браузера
   const changeTab = (tab: string, project: string | null = null) => {
     setActiveTab(tab);
     setSelectedProject(project);
@@ -65,13 +64,30 @@ export default function AdImageStudio() {
   const [variantsCount, setVariantsCount] = useState(2);
   const [quality, setQuality] = useState("Стандарт (Рекомендовано)");
 
+  // Референсне фото (Image-to-Image)
+  const [referenceFile, setReferenceFile] = useState<File | null>(null);
+  const [referencePreview, setReferencePreview] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setReferenceFile(file);
+      setReferencePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeReference = () => {
+    setReferenceFile(null);
+    setReferencePreview(null);
+  };
+
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<string[]>([
     "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=60",
     "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60"
   ]);
 
-  // Стан проєкту
+  // Стан проєктів
   const [projects, setProjects] = useState([
     { id: 1, name: "Клієнт: Клініка DentArt", count: 14 },
     { id: 2, name: "Клієнт: Бренд одягу Urban", count: 8 },
@@ -96,6 +112,7 @@ export default function AdImageStudio() {
     if (selectedProject) changeTab("projects", null);
   };
 
+  // Функція генерації
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       alert("Будь ласка, введіть описовий промпт перед генерацією!");
@@ -117,6 +134,7 @@ export default function AdImageStudio() {
           textSpace,
           variantsCount,
           quality,
+          hasReference: !!referenceFile
         }),
       });
 
@@ -151,7 +169,7 @@ export default function AdImageStudio() {
           </div>
         </div>
 
-        {/* Навігаційні кнопки зі збереженням в історію браузера */}
+        {/* Перемикання Вкладок */}
         <nav className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-sm">
           <button 
             onClick={() => changeTab("generator")}
@@ -210,12 +228,14 @@ export default function AdImageStudio() {
       {activeTab === "generator" && (
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           <aside className="w-full lg:w-[420px] border-r border-slate-800/80 bg-[#0d1322] p-5 flex flex-col gap-5 overflow-y-auto max-h-[calc(100vh-61px)]">
+            
+            {/* Текстовий промпт */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                   Текстовий запит (PROMPT)
                 </label>
-                <button className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium transition">
+                <button className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium transition cursor-pointer">
                   <Sparkles className="w-3 h-3" /> Покращити промпт
                 </button>
               </div>
@@ -228,6 +248,7 @@ export default function AdImageStudio() {
               />
             </div>
 
+            {/* Вибір Ніші */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 Ніша / Тематика
@@ -235,7 +256,7 @@ export default function AdImageStudio() {
               <select
                 value={niche}
                 onChange={(e) => setNiche(e.target.value)}
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer"
               >
                 <option value="Краса та б'юті">Краса та б'юті (Косметика, Догляд, Салони)</option>
                 <option value="Нерухомість">Нерухомість & Дизайн інтер'єру</option>
@@ -260,6 +281,7 @@ export default function AdImageStudio() {
               </select>
             </div>
 
+            {/* Формат */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 Формат / Платформа
@@ -290,6 +312,7 @@ export default function AdImageStudio() {
               </div>
             </div>
 
+            {/* Візуальний стиль */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 Візуальний стиль
@@ -297,7 +320,7 @@ export default function AdImageStudio() {
               <select
                 value={style}
                 onChange={(e) => setStyle(e.target.value)}
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer"
               >
                 <option value="Фотореалізм">Фотореалізм (Photorealistic)</option>
                 <option value="Студійна зйомка">Студійна зйомка (Studio Soft Light)</option>
@@ -316,6 +339,7 @@ export default function AdImageStudio() {
               </select>
             </div>
 
+            {/* Настрій & Палітра */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 Настрій & Палітра
@@ -337,6 +361,7 @@ export default function AdImageStudio() {
               </div>
             </div>
 
+            {/* Місце під текст */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 Порожнє місце під текст
@@ -344,7 +369,7 @@ export default function AdImageStudio() {
               <select
                 value={textSpace}
                 onChange={(e) => setTextSpace(e.target.value)}
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer"
               >
                 <option value="Без зарезервованого місця">Без зарезервованого місця</option>
                 <option value="Зверху">Зверху (для заголовка / плашки)</option>
@@ -356,6 +381,7 @@ export default function AdImageStudio() {
               </select>
             </div>
 
+            {/* Кількість і Якість */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
@@ -385,7 +411,7 @@ export default function AdImageStudio() {
                 <select
                   value={quality}
                   onChange={(e) => setQuality(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition"
+                  className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer"
                 >
                   <option value="Стандарт (Рекомендовано)">Стандарт (Рекомендовано)</option>
                   <option value="Висока (4K HD)">Висока (4K HD)</option>
@@ -395,16 +421,46 @@ export default function AdImageStudio() {
               </div>
             </div>
 
+            {/* ПОВНІСТЮ РОБОЧЕ завантаження референсного фото */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 РЕФЕРЕНСНЕ ФОТО / ТОБАР (IMAGE-TO-IMAGE)
               </label>
-              <div className="border-2 border-dashed border-slate-800 hover:border-slate-700 rounded-xl p-4 text-center cursor-pointer bg-slate-950/30 transition">
-                <Upload className="w-5 h-5 mx-auto text-slate-400 mb-1" />
-                <p className="text-xs text-slate-400 font-medium">Завантажити референс</p>
-              </div>
+              
+              {referencePreview ? (
+                <div className="relative border border-indigo-500/50 rounded-xl p-2 bg-slate-950/80 flex items-center gap-3">
+                  <img 
+                    src={referencePreview} 
+                    alt="Reference preview" 
+                    className="w-12 h-12 object-cover rounded-lg border border-slate-800"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-slate-200 truncate">{referenceFile?.name}</p>
+                    <p className="text-[10px] text-emerald-400">Готово для Image-to-Image</p>
+                  </div>
+                  <button 
+                    onClick={removeReference}
+                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="border-2 border-dashed border-slate-800 hover:border-indigo-500/50 rounded-xl p-4 text-center cursor-pointer bg-slate-950/30 transition flex flex-col items-center justify-center block">
+                  <Upload className="w-5 h-5 text-indigo-400 mb-1" />
+                  <p className="text-xs text-slate-300 font-medium">Завантажити референс</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">PNG, JPG, WEBP до 10MB</p>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={handleFileChange} 
+                  />
+                </label>
+              )}
             </div>
 
+            {/* Кнопка запуску */}
             <button 
               onClick={handleGenerate}
               disabled={loading}
@@ -634,7 +690,7 @@ export default function AdImageStudio() {
         </main>
       )}
 
-      {/* Модальне вікно створення проєкту */}
+      {/* Спливаюче вікно створення проєкту */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#0d1322] border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
