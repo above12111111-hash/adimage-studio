@@ -12,7 +12,8 @@ import {
   Layers, 
   Folder, 
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from "lucide-react";
 
 export default function AdImageStudio() {
@@ -24,6 +25,54 @@ export default function AdImageStudio() {
   const [textSpace, setTextSpace] = useState("Без зарезервованого місця");
   const [variantsCount, setVariantsCount] = useState(2);
   const [quality, setQuality] = useState("Стандарт (Рекомендовано)");
+
+  const [loading, setLoading] = useState(false);
+  const [images, setImages] = useState<string[]>([
+    "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=60",
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60"
+  ]);
+
+  // Функція генерації
+  const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      alert("Будь ласка, введіть описовий промпт перед генерацією!");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          niche,
+          aspectRatio,
+          style,
+          mood,
+          textSpace,
+          variantsCount,
+          quality,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.images && data.images.length > 0) {
+        setImages(data.images);
+      } else if (data.image) {
+        setImages([data.image]);
+      } else if (data.error) {
+        alert("Помилка генерації: " + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Сталася помилка при відправці запиту на сервер.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col font-sans">
@@ -89,7 +138,7 @@ export default function AdImageStudio() {
             />
           </div>
 
-          {/* Niche Selection - Розширений список */}
+          {/* Niche Selection */}
           <div className="space-y-2">
             <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
               Ніша / Тематика
@@ -109,8 +158,6 @@ export default function AdImageStudio() {
               <option value="Фитнес & Здоров'я">Фитнес, Спорт & Здорове харчування</option>
               <option value="Автобізнес">Автосалони, Детейлінг & СТО</option>
               <option value="Освіта та інфобізнес">Освіта, Курси & Інфобізнес</option>
-              <option value="Туризм та готелі">Туризм, Готелі & Відпочинок</option>
-              <option value="IT & Стартапи">IT, Софт & Цифрові продукти</option>
             </select>
           </div>
 
@@ -145,7 +192,7 @@ export default function AdImageStudio() {
             </div>
           </div>
 
-          {/* Visual Style - Розширений список */}
+          {/* Visual Style */}
           <div className="space-y-2">
             <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
               Візуальний стиль
@@ -162,9 +209,6 @@ export default function AdImageStudio() {
               <option value="Вектор / Ілюстрація">Вектор / Графічна Ілюстрація</option>
               <option value="Lifestyle">Lifestyle / Живі кадри з людьми</option>
               <option value="Кинематографічний">Кінематографічний (Cinematic Mood)</option>
-              <option value="Неон & Хайтек">Неон & Хайтек (Cyberpunk / Modern Tech)</option>
-              <option value="Flat Lay">Flat Lay / Розкладка зверху</option>
-              <option value="Макро / Деталізація">Макрозйомка / Текстури та деталі</option>
             </select>
           </div>
 
@@ -205,11 +249,10 @@ export default function AdImageStudio() {
               <option value="Знизу">Знизу (для оферу / кнопки)</option>
               <option value="Зліва">Зліва (для текстового блоку)</option>
               <option value="Справа">Справа (для текстового блоку)</option>
-              <option value="Центральний об'єкт з розмитим фоном">Центральний об'єкт з розмитим фоном</option>
             </select>
           </div>
 
-          {/* Variants Count & Quality - Розширені варіанти якості */}
+          {/* Variants Count & Quality */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
@@ -243,8 +286,7 @@ export default function AdImageStudio() {
               >
                 <option value="Стандарт (Рекомендовано)">Стандарт (Рекомендовано)</option>
                 <option value="Висока (4K)">Висока (4K)</option>
-                <option value="Ультра (8K)">Ультра (8K / Studio Render)</option>
-                <option value="Максимальна (8K RAW & Fine Detail)">Максимальна (8K RAW / Fine Detail)</option>
+                <option value="Ультра (8K)">Ультра (8K)</option>
               </select>
             </div>
           </div>
@@ -260,10 +302,23 @@ export default function AdImageStudio() {
             </div>
           </div>
 
-          {/* Submit Button */}
-          <button className="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transition mt-2">
-            <Zap className="w-4 h-4 fill-white" />
-            <span>Згенерувати візуали ({variantsCount} кредити)</span>
+          {/* Submit Button з функцією onClick */}
+          <button 
+            onClick={handleGenerate}
+            disabled={loading}
+            className="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transition mt-2 cursor-pointer"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin text-white" />
+                <span>Генеруємо...</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4 fill-white" />
+                <span>Згенерувати візуали ({variantsCount} кредити)</span>
+              </>
+            )}
           </button>
         </aside>
 
@@ -274,7 +329,7 @@ export default function AdImageStudio() {
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <ImageIcon className="w-5 h-5 text-indigo-400" /> Згенеровані креативи
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">Усього згенеровано: 2 результатів</p>
+              <p className="text-xs text-slate-400 mt-0.5">Усього згенеровано: {images.length} результатів</p>
             </div>
 
             <div className="flex items-center gap-4 text-xs text-slate-400">
@@ -288,73 +343,46 @@ export default function AdImageStudio() {
 
           {/* Gallery Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-[#0d1322] border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-slate-700 transition">
-              <div className="relative aspect-square bg-slate-900 flex items-center justify-center overflow-hidden">
-                <span className="absolute top-3 left-3 bg-black/60 backdrop-blur text-[10px] font-mono px-2 py-1 rounded text-white font-bold">
-                  1:1 • FEED
-                </span>
-                <button className="absolute top-3 right-3 p-1.5 rounded-full bg-black/60 backdrop-blur text-slate-300 hover:text-white transition">
-                  <Bookmark className="w-4 h-4" />
-                </button>
-                <img
-                  src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=60"
-                  alt="Example Creative"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-              </div>
-              <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
-                <p className="text-xs text-slate-400 italic">
-                  "Skincare serum on aesthetic stone with tropical palm leaves shadow"
-                </p>
-                <div className="flex flex-col gap-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition">
-                      <Download className="w-3.5 h-3.5" /> Завантажити
-                    </button>
-                    <button className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition">
-                      <Type className="w-3.5 h-3.5" /> Додати Текст/Лого
+            {images.map((imgUrl, index) => (
+              <div key={index} className="bg-[#0d1322] border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-slate-700 transition">
+                <div className="relative aspect-square bg-slate-900 flex items-center justify-center overflow-hidden">
+                  <span className="absolute top-3 left-3 bg-black/60 backdrop-blur text-[10px] font-mono px-2 py-1 rounded text-white font-bold">
+                    {aspectRatio} • {aspectRatio === "1:1" ? "FEED" : "FORMAT"}
+                  </span>
+                  <button className="absolute top-3 right-3 p-1.5 rounded-full bg-black/60 backdrop-blur text-slate-300 hover:text-white transition">
+                    <Bookmark className="w-4 h-4" />
+                  </button>
+                  <img
+                    src={imgUrl}
+                    alt={`Generated Creative ${index + 1}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                  />
+                </div>
+                <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
+                  <p className="text-xs text-slate-400 italic">
+                    "{prompt || "Згенероване зображення за вашим запитом"}"
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <a 
+                        href={imgUrl} 
+                        target="_blank" 
+                        download={`creative-${index + 1}.png`} 
+                        className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition"
+                      >
+                        <Download className="w-3.5 h-3.5" /> Завантажити
+                      </a>
+                      <button className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition">
+                        <Type className="w-3.5 h-3.5" /> Додати Текст/Лого
+                      </button>
+                    </div>
+                    <button className="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition">
+                      <FileText className="w-3.5 h-3.5" /> Рекламний текст
                     </button>
                   </div>
-                  <button className="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition">
-                    <FileText className="w-3.5 h-3.5" /> Рекламний текст
-                  </button>
                 </div>
               </div>
-            </div>
-
-            <div className="bg-[#0d1322] border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-slate-700 transition">
-              <div className="relative aspect-square bg-slate-900 flex items-center justify-center overflow-hidden">
-                <span className="absolute top-3 left-3 bg-black/60 backdrop-blur text-[10px] font-mono px-2 py-1 rounded text-white font-bold">
-                  4:5 • PORTRAIT
-                </span>
-                <button className="absolute top-3 right-3 p-1.5 rounded-full bg-red-500/80 backdrop-blur text-white transition">
-                  <Bookmark className="w-4 h-4 fill-white" />
-                </button>
-                <img
-                  src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60"
-                  alt="Example Creative"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-              </div>
-              <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
-                <p className="text-xs text-slate-400 italic">
-                  "Modern architectural interior living room, bright warm light"
-                </p>
-                <div className="flex flex-col gap-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition">
-                      <Download className="w-3.5 h-3.5" /> Завантажити
-                    </button>
-                    <button className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition">
-                      <Type className="w-3.5 h-3.5" /> Додати Текст/Лого
-                    </button>
-                  </div>
-                  <button className="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition">
-                    <FileText className="w-3.5 h-3.5" /> Рекламний текст
-                  </button>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </main>
       </div>
