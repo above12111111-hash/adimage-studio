@@ -19,9 +19,10 @@ import {
 } from "lucide-react";
 
 export default function AdImageStudio() {
-  // Активна вкладка: "generator" | "prompts" | "history" | "projects"
+  // Активна вкладка навігації
   const [activeTab, setActiveTab] = useState("generator");
 
+  // Стан форм генератора
   const [prompt, setPrompt] = useState("");
   const [niche, setNiche] = useState("Краса та б'юті");
   const [aspectRatio, setAspectRatio] = useState("1:1");
@@ -37,6 +38,7 @@ export default function AdImageStudio() {
     "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60"
   ]);
 
+  // Функція генерації
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       alert("Будь ласка, введіть описовий промпт перед генерацією!");
@@ -80,7 +82,7 @@ export default function AdImageStudio() {
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col font-sans">
-      {/* Header з робочими кнопками вкладок */}
+      {/* Хедер з робочими вкладками */}
       <header className="border-b border-slate-800 bg-[#0d1322]/80 backdrop-blur px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
@@ -92,7 +94,7 @@ export default function AdImageStudio() {
           </div>
         </div>
 
-        {/* Перемикач вкладок */}
+        {/* Робочий перемикач вкладок */}
         <nav className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-sm">
           <button 
             onClick={() => setActiveTab("generator")}
@@ -147,10 +149,13 @@ export default function AdImageStudio() {
         </div>
       </header>
 
-      {/* Вкладка 1: Основний генератор */}
+      {/* Вкладка 1: Головний Генератор з Максимальною кількістю опцій */}
       {activeTab === "generator" && (
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+          {/* Ліва панель налаштувань */}
           <aside className="w-full lg:w-[420px] border-r border-slate-800/80 bg-[#0d1322] p-5 flex flex-col gap-5 overflow-y-auto max-h-[calc(100vh-61px)]">
+            
+            {/* Текстовий промпт */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
@@ -164,11 +169,12 @@ export default function AdImageStudio() {
                 rows={3}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Опишіть бажаний рекламний візуал, наприклад: Реклама стоматології, усміхнена дівчина, світлий сучасний інтер'єр, люксовий стиль..."
+                placeholder="Опишіть бажаний рекламний візуал, наприклад: Реклама стоматології, усміхнена дівчина, светлий сучасний інтер'єр, люксовий стиль..."
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition resize-none"
               />
             </div>
 
+            {/* МАКСИМАЛЬНИЙ вибір Ніш / Тематики */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 Ніша / Тематика
@@ -190,9 +196,18 @@ export default function AdImageStudio() {
                 <option value="Автобізнес">Автосалони, Детейлінг, СТО & Автопрокат</option>
                 <option value="Освіта та інфобізнес">Освіта, Онлайн-курси & Інфобізнес</option>
                 <option value="Туризм та готелі">Туризм, Готелі & Відпочинок</option>
+                <option value="IT & Стартапи">IT, Софт & Цифрові продукти</option>
+                <option value="Крипто & Web3">Крипто, Фінанси & Трейдинг</option>
+                <option value="Дитячі товари">Дитячі товари & Іграшки</option>
+                <option value="Зоотовари">Зоотовари & Ветклініки</option>
+                <option value="Будівництво та ремонт">Будівництво, Майстри & Ремонт</option>
+                <option value="Електроніка та гаджети">Електроніка, Смартфони & Гаджети</option>
+                <option value="Парфумерія">Парфумерія & Аромати</option>
+                <option value="Універсальний рекламний банер">Універсальний рекламний банер</option>
               </select>
             </div>
 
+            {/* Формат / Платформа */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 Формат / Платформа
@@ -201,13 +216,13 @@ export default function AdImageStudio() {
                 {[
                   { id: "1:1", label: "1:1 Square", sub: "FB/IG Feed" },
                   { id: "4:5", label: "4:5 Portrait", sub: "Instagram Feed" },
-                  { id: "9:16", label: "9:16 Vertical", sub: "Stories / Reels" },
+                  { id: "9:16", label: "9:16 Vertical", sub: "Stories / Reels / TikTok" },
                   { id: "1.91:1", label: "1.91:1 Landscape", sub: "FB Landscape Banner" },
                 ].map((item) => (
                   <button
                     key={item.id}
                     onClick={() => setAspectRatio(item.id)}
-                    className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
+                    className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                       aspectRatio === item.id
                         ? "bg-indigo-600/15 border-indigo-500 text-white"
                         : "bg-slate-950/40 border-slate-800/80 text-slate-400 hover:border-slate-700"
@@ -223,6 +238,7 @@ export default function AdImageStudio() {
               </div>
             </div>
 
+            {/* МАКСИМАЛЬНИЙ вибір Візуальних Стилів */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 Візуальний стиль
@@ -239,19 +255,27 @@ export default function AdImageStudio() {
                 <option value="Вектор / Ілюстрація">Вектор / Графічна Ілюстрація</option>
                 <option value="Lifestyle">Lifestyle / Кадри з живими людьми</option>
                 <option value="Кинематографічний">Кінематографічний (Cinematic Drama)</option>
+                <option value="Неон & Хайтек">Неон & Хайтек (Cyberpunk / Modern Tech)</option>
+                <option value="Flat Lay">Flat Lay / Розкладка товарів зверху</option>
+                <option value="Макро / Деталізація">Макрозйомка / Текстури та деталі</option>
+                <option value="Ретро / Вінтаж">Ретро / Вінтаж (80s / Film Grain)</option>
+                <option value="Мінімалістичний поп-арт">Мінімалістичний Поп-арт</option>
+                <option value="Абстрактна естетика">Абстрактна естетика & Геометрія</option>
+                <option value="Акварель / Хендмейд">Акварель / Хендмейд ілюстрація</option>
               </select>
             </div>
 
+            {/* МАКСИМАЛЬНИЙ вибір Настрою & Палітри */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 Настрій & Палітра
               </label>
               <div className="grid grid-cols-3 gap-2">
-                {["Тепла", "Холодна", "Пастельна", "Контрастна", "Монохром", "Колір бренду"].map((item) => (
+                {["Тепла", "Холодна", "Пастельна", "Контрастна", "Монохром", "Колір бренду", "Темна люкс", "Яскрава / Неонова", "Природна / Нюд"].map((item) => (
                   <button
                     key={item}
                     onClick={() => setMood(item)}
-                    className={`py-2 px-1.5 text-[11px] rounded-xl border text-center transition font-medium ${
+                    className={`py-2 px-1.5 text-[11px] rounded-xl border text-center transition font-medium cursor-pointer ${
                       mood === item
                         ? "bg-indigo-600/20 border-indigo-500 text-indigo-300"
                         : "bg-slate-950/40 border-slate-800/80 text-slate-400 hover:border-slate-700"
@@ -263,6 +287,7 @@ export default function AdImageStudio() {
               </div>
             </div>
 
+            {/* МАКСИМАЛЬНИЙ вибір Порожнього місця під текст */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 Порожнє місце під текст
@@ -277,9 +302,12 @@ export default function AdImageStudio() {
                 <option value="Знизу">Знизу (для оферу / кнопки)</option>
                 <option value="Зліва">Зліва (для текстового блоку)</option>
                 <option value="Справа">Справа (для текстового блоку)</option>
+                <option value="Центральний об'єкт з розмитим фоном">Центральний об'єкт з розмитим фоном</option>
+                <option value="Рамка / Вільні краї навколо">Рамка / Вільні краї навколо</option>
               </select>
             </div>
 
+            {/* Кількість та Якість */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
@@ -290,7 +318,7 @@ export default function AdImageStudio() {
                     <button
                       key={num}
                       onClick={() => setVariantsCount(num)}
-                      className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${
+                      className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
                         variantsCount === num
                           ? "bg-indigo-600 text-white"
                           : "text-slate-400 hover:text-slate-200"
@@ -314,10 +342,12 @@ export default function AdImageStudio() {
                   <option value="Стандарт (Рекомендовано)">Стандарт (Рекомендовано)</option>
                   <option value="Висока (4K HD)">Висока (4K HD)</option>
                   <option value="Ультра (8K Studio Render)">Ультра (8K Studio Render)</option>
+                  <option value="Максимальна (8K RAW Fine Detail)">Максимальна (8K RAW Fine Detail)</option>
                 </select>
               </div>
             </div>
 
+            {/* Завантаження референсу */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 РЕФЕРЕНСНЕ ФОТО / ТОБАР (IMAGE-TO-IMAGE)
@@ -328,6 +358,7 @@ export default function AdImageStudio() {
               </div>
             </div>
 
+            {/* Кнопка запуску генерації */}
             <button 
               onClick={handleGenerate}
               disabled={loading}
@@ -347,6 +378,7 @@ export default function AdImageStudio() {
             </button>
           </aside>
 
+          {/* Права частина: Галерея */}
           <main className="flex-1 p-6 overflow-y-auto bg-[#0b0f19] flex flex-col">
             <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-800/80">
               <div>
@@ -372,7 +404,7 @@ export default function AdImageStudio() {
                     <span className="absolute top-3 left-3 bg-black/60 backdrop-blur text-[10px] font-mono px-2 py-1 rounded text-white font-bold">
                       {aspectRatio} • {aspectRatio === "1:1" ? "FEED" : "FORMAT"}
                     </span>
-                    <button className="absolute top-3 right-3 p-1.5 rounded-full bg-black/60 backdrop-blur text-slate-300 hover:text-white transition">
+                    <button className="absolute top-3 right-3 p-1.5 rounded-full bg-black/60 backdrop-blur text-slate-300 hover:text-white transition cursor-pointer">
                       <Bookmark className="w-4 h-4" />
                     </button>
                     <img
@@ -391,15 +423,15 @@ export default function AdImageStudio() {
                           href={imgUrl} 
                           target="_blank" 
                           download={`creative-${index + 1}.png`} 
-                          className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition text-center"
+                          className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition text-center cursor-pointer"
                         >
                           <Download className="w-3.5 h-3.5" /> Завантажити
                         </a>
-                        <button className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition">
+                        <button className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer">
                           <Type className="w-3.5 h-3.5" /> Додати Текст/Лого
                         </button>
                       </div>
-                      <button className="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition">
+                      <button className="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer">
                         <FileText className="w-3.5 h-3.5" /> Рекламний текст
                       </button>
                     </div>
@@ -430,6 +462,8 @@ export default function AdImageStudio() {
                 { title: "Косметика / Сироватка", prompt: "Luxury serum bottle on clean beige stone, tropical palm shadow, water drops, cinematic lighting, editorial aesthetic, 8k" },
                 { title: "Нерухомість / ЖК", prompt: "Modern luxury apartment living room, panoramic windows, sunset light, high-end furniture, architectural design photography" },
                 { title: "Доставка їжі / Суші", prompt: "Fresh salmon sushi roll set, close up macro shot, dark background, neon bokeh lights, appetizing commercial food photography" },
+                { title: "Салон краси / Зачіски", prompt: "Professional hair salon model, shiny healthy blonde hair, soft studio ring light, high-end beauty magazine style" },
+                { title: "Автодетейлінг", prompt: "Luxury sports car polished shiny surface, dark garage with LED neon strip lights, cinematic reflections, 8k detail" }
               ].map((item, i) => (
                 <div key={i} className="bg-[#0d1322] border border-slate-800 p-4 rounded-xl space-y-3">
                   <div className="flex justify-between items-center">
@@ -439,7 +473,7 @@ export default function AdImageStudio() {
                         setPrompt(item.prompt);
                         setActiveTab("generator");
                       }}
-                      className="text-xs bg-indigo-600/20 hover:bg-indigo-600 text-indigo-200 px-2.5 py-1 rounded-lg border border-indigo-500/30 transition flex items-center gap-1"
+                      className="text-xs bg-indigo-600/20 hover:bg-indigo-600 text-indigo-200 px-2.5 py-1 rounded-lg border border-indigo-500/30 transition flex items-center gap-1 cursor-pointer"
                     >
                       <Copy className="w-3 h-3" /> Вставити в генератор
                     </button>
@@ -488,7 +522,7 @@ export default function AdImageStudio() {
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">Створюйте окремі папки під кожного клієнта</p>
               </div>
-              <button className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition">
+              <button className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer">
                 <Plus className="w-4 h-4" /> Новий проєкт
               </button>
             </div>
