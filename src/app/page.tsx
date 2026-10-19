@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Sparkles, 
   Upload, 
@@ -22,8 +22,38 @@ import {
 } from "lucide-react";
 
 export default function AdImageStudio() {
-  // Активна вкладка навігації
   const [activeTab, setActiveTab] = useState("generator");
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
+  // Синхронізація з кнопками браузера "Назад" та "Вперед"
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (hash.startsWith("project-")) {
+        setActiveTab("projects");
+        setSelectedProject(decodeURIComponent(hash.replace("project-", "")));
+      } else if (["generator", "prompts", "history", "projects"].includes(hash)) {
+        setActiveTab(hash);
+        setSelectedProject(null);
+      } else {
+        setActiveTab("generator");
+        setSelectedProject(null);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    handlePopState(); // Ініціалізація при завантаженні
+
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  // Перемикання вкладок із записом в історію браузера
+  const changeTab = (tab: string, project: string | null = null) => {
+    setActiveTab(tab);
+    setSelectedProject(project);
+    const newHash = project ? `#project-${encodeURIComponent(project)}` : `#${tab}`;
+    window.history.pushState(null, "", newHash);
+  };
 
   // Стан форм генератора
   const [prompt, setPrompt] = useState("");
@@ -41,17 +71,15 @@ export default function AdImageStudio() {
     "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60"
   ]);
 
-  // Стан для розділу Проєкти & Клієнти
+  // Стан проєкту
   const [projects, setProjects] = useState([
     { id: 1, name: "Клієнт: Клініка DentArt", count: 14 },
     { id: 2, name: "Клієнт: Бренд одягу Urban", count: 8 },
     { id: 3, name: "Особистий проєкт: E-com", count: 22 },
   ]);
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
 
-  // Додавання нового проєкту
   const handleAddProject = () => {
     if (!newProjectName.trim()) return;
     setProjects([
@@ -62,14 +90,12 @@ export default function AdImageStudio() {
     setIsModalOpen(false);
   };
 
-  // Видалення проєкту
   const handleDeleteProject = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setProjects(projects.filter((p) => p.id !== id));
-    if (selectedProject) setSelectedProject(null);
+    if (selectedProject) changeTab("projects", null);
   };
 
-  // Функція генерації
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       alert("Будь ласка, введіть описовий промпт перед генерацією!");
@@ -125,10 +151,10 @@ export default function AdImageStudio() {
           </div>
         </div>
 
-        {/* Навігація вкладок */}
+        {/* Навігаційні кнопки зі збереженням в історію браузера */}
         <nav className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-sm">
           <button 
-            onClick={() => { setActiveTab("generator"); setSelectedProject(null); }}
+            onClick={() => changeTab("generator")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
               activeTab === "generator" 
                 ? "bg-indigo-600 text-white shadow-sm" 
@@ -138,7 +164,7 @@ export default function AdImageStudio() {
             <Sparkles className="w-4 h-4" /> Генератор
           </button>
           <button 
-            onClick={() => { setActiveTab("prompts"); setSelectedProject(null); }}
+            onClick={() => changeTab("prompts")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
               activeTab === "prompts" 
                 ? "bg-indigo-600 text-white shadow-sm" 
@@ -148,7 +174,7 @@ export default function AdImageStudio() {
             <Bookmark className="w-4 h-4" /> Бібліотека промптів
           </button>
           <button 
-            onClick={() => { setActiveTab("history"); setSelectedProject(null); }}
+            onClick={() => changeTab("history")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
               activeTab === "history" 
                 ? "bg-indigo-600 text-white shadow-sm" 
@@ -158,7 +184,7 @@ export default function AdImageStudio() {
             <Layers className="w-4 h-4" /> Історія та Обране
           </button>
           <button 
-            onClick={() => setActiveTab("projects")}
+            onClick={() => changeTab("projects")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
               activeTab === "projects" 
                 ? "bg-indigo-600 text-white shadow-sm" 
@@ -223,7 +249,7 @@ export default function AdImageStudio() {
                 <option value="Автобізнес">Автосалони, Детейлінг, СТО & Автопрокат</option>
                 <option value="Освіта та інфобізнес">Освіта, Онлайн-курси & Інфобізнес</option>
                 <option value="Туризм та готелі">Туризм, Готелі & Відпочинок</option>
-                <option value="IT & Стартапи">IT, Софт & Цифрові продукты</option>
+                <option value="IT & Стартапи">IT, Софт & Цифрові продукти</option>
                 <option value="Крипто & Web3">Крипто, Фінанси & Трейдинг</option>
                 <option value="Дитячі товари">Дитячі товари & Іграшки</option>
                 <option value="Зоотовари">Зоотовари & Ветклініки</option>
@@ -490,7 +516,7 @@ export default function AdImageStudio() {
                     <button 
                       onClick={() => {
                         setPrompt(item.prompt);
-                        setActiveTab("generator");
+                        changeTab("generator");
                       }}
                       className="text-xs bg-indigo-600/20 hover:bg-indigo-600 text-indigo-200 px-2.5 py-1 rounded-lg border border-indigo-500/30 transition flex items-center gap-1 cursor-pointer"
                     >
@@ -530,7 +556,7 @@ export default function AdImageStudio() {
         </main>
       )}
 
-      {/* Вкладка 4: Проєкти & Клієнти (Повністю інтерактивний розділ) */}
+      {/* Вкладка 4: Проєкти & Клієнти */}
       {activeTab === "projects" && (
         <main className="flex-1 p-6 bg-[#0b0f19] overflow-y-auto">
           <div className="max-w-5xl mx-auto space-y-6">
@@ -549,7 +575,6 @@ export default function AdImageStudio() {
               </button>
             </div>
 
-            {/* Якщо вибрано конкретну папку клієнта */}
             {selectedProject ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between bg-[#0d1322] p-4 rounded-xl border border-slate-800">
@@ -561,7 +586,7 @@ export default function AdImageStudio() {
                     </div>
                   </div>
                   <button 
-                    onClick={() => setSelectedProject(null)}
+                    onClick={() => changeTab("projects", null)}
                     className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg transition cursor-pointer"
                   >
                     ← Назад до всіх проєктів
@@ -572,7 +597,7 @@ export default function AdImageStudio() {
                   <ImageIcon className="w-10 h-10 text-slate-600 mx-auto" />
                   <p className="text-sm text-slate-300 font-medium">У цій папці поки немає збережених креативів</p>
                   <button 
-                    onClick={() => setActiveTab("generator")}
+                    onClick={() => changeTab("generator")}
                     className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl transition font-medium cursor-pointer"
                   >
                     Згенерувати перший креатив для цього клієнта
@@ -580,12 +605,11 @@ export default function AdImageStudio() {
                 </div>
               </div>
             ) : (
-              /* Список проєктів */
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {projects.map((proj) => (
                   <div 
                     key={proj.id} 
-                    onClick={() => setSelectedProject(proj.name)}
+                    onClick={() => changeTab("projects", proj.name)}
                     className="bg-[#0d1322] border border-slate-800 hover:border-indigo-500/50 p-4 rounded-xl flex items-center justify-between transition cursor-pointer group"
                   >
                     <div className="flex items-center gap-3">
@@ -610,7 +634,7 @@ export default function AdImageStudio() {
         </main>
       )}
 
-      {/* Спливаюче вікно (Модалка) створення нового проєкту */}
+      {/* Модальне вікно створення проєкту */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#0d1322] border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
