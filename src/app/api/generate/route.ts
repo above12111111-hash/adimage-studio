@@ -1,9 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import Replicate from "replicate";
-
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,42 +12,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!process.env.REPLICATE_API_TOKEN) {
-      return NextResponse.json(
-        { error: "API-ключ REPLICATE_API_TOKEN не налаштовано на сервері." },
-        { status: 500 }
-      );
-    }
-
-    // Формуємо спеціальний рекламний промпт для нейромережі
-    const adPrompt = `High-converting commercial advertisement banner for ${niche || "business"}. 
-    Main Subject: ${prompt}. 
-    Style: ${style || "Modern professional advertising design"}, studio lighting, 8k resolution, graphic design layout with space for text, catchy promotional visual, Instagram & Facebook ad template, highly detailed.`;
-
-    let aspect_ratio = "1:1";
-    if (aspectRatio === "9:16") aspect_ratio = "9:16";
-    if (aspectRatio === "4:5") aspect_ratio = "4:5";
-
-    // Запуск нейромережі Flux
-    const output = await replicate.run(
-      "black-forest-labs/flux-schnell",
-      {
-        input: {
-          prompt: adPrompt,
-          aspect_ratio: aspect_ratio,
-          output_format: "png",
-          output_quality: 95,
-        }
-      }
+    // Формуємо рекламний промпт
+    const fullPrompt = encodeURIComponent(
+      `High-converting commercial advertisement banner for ${niche || "business"}. Main Subject: ${prompt}. Style: ${style || "Modern professional advertising design"}, studio lighting, 8k resolution`
     );
 
-    const imageUrls = Array.isArray(output) ? output : [output];
+    // Визначення розмірів
+    let width = 1024;
+    let height = 1024;
 
-    return NextResponse.json({ images: imageUrls });
+    if (aspectRatio === "9:16") {
+      width = 768;
+      height = 1344;
+    } else if (aspectRatio === "4:5") {
+      width = 800;
+      height = 1000;
+    }
+
+    // Випадкове число для унікальності картинок
+    const seed = Math.floor(Math.random() * 1000000);
+
+    // Безкоштовний URL від Pollinations із моделлю FLUX
+    const imageUrl = `https://pollinations.ai/p/${fullPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux&nologo=true`;
+
+    return NextResponse.json({ images: [imageUrl] });
   } catch (error: any) {
-    console.error("Replicate API Error:", error);
     return NextResponse.json(
-      { error: error.message || "Помилка при генерації креативу" },
+      { error: "Помилка при генерації зображення" },
       { status: 500 }
     );
   }
