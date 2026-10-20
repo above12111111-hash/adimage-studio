@@ -18,7 +18,8 @@ import {
   Plus,
   X,
   Trash2,
-  FolderOpen
+  FolderOpen,
+  Wand2
 } from "lucide-react";
 
 export default function AdImageStudio() {
@@ -56,6 +57,7 @@ export default function AdImageStudio() {
 
   // Стан форм генератора
   const [prompt, setPrompt] = useState("");
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const [niche, setNiche] = useState("Краса та б'юті");
   const [aspectRatio, setAspectRatio] = useState("1:1");
   const [style, setStyle] = useState("Фотореалізм");
@@ -63,6 +65,22 @@ export default function AdImageStudio() {
   const [textSpace, setTextSpace] = useState("Без зарезервованого місця");
   const [variantsCount, setVariantsCount] = useState(2);
   const [quality, setQuality] = useState("Стандарт (Рекомендовано)");
+
+  // Робоча функція покращення промпту
+  const handleEnhancePrompt = () => {
+    if (!prompt.trim()) {
+      alert("Введіть хоча б декілька слів у полі промпту, щоб AI міг його покращити!");
+      return;
+    }
+
+    setIsEnhancing(true);
+
+    setTimeout(() => {
+      const enhanced = `${prompt.trim()}, ${niche.toLowerCase()} niche advertisement, ${style.toLowerCase()} visual style, ${mood.toLowerCase()} tone, hyper-realistic details, professional commercial photography, soft studio lighting, ultra-high resolution, 8k --ar ${aspectRatio}`;
+      setPrompt(enhanced);
+      setIsEnhancing(false);
+    }, 600);
+  };
 
   // Референсне фото (Image-to-Image)
   const [referenceFile, setReferenceFile] = useState<File | null>(null);
@@ -169,7 +187,7 @@ export default function AdImageStudio() {
           </div>
         </div>
 
-        {/* Перемикання Вкладок */}
+        {/* Навігація */}
         <nav className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-sm">
           <button 
             onClick={() => changeTab("generator")}
@@ -229,26 +247,40 @@ export default function AdImageStudio() {
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           <aside className="w-full lg:w-[420px] border-r border-slate-800/80 bg-[#0d1322] p-5 flex flex-col gap-5 overflow-y-auto max-h-[calc(100vh-61px)]">
             
-            {/* Текстовий промпт */}
+            {/* Текстовий промпт з робочою кнопкою "Покращити промпт" */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                   Текстовий запит (PROMPT)
                 </label>
-                <button className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium transition cursor-pointer">
-                  <Sparkles className="w-3 h-3" /> Покращити промпт
+                <button 
+                  onClick={handleEnhancePrompt}
+                  disabled={isEnhancing}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium transition cursor-pointer disabled:opacity-50"
+                >
+                  {isEnhancing ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin text-indigo-400" />
+                      <span>Покращуємо...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-3 h-3" />
+                      <span>Покращити промпт</span>
+                    </>
+                  )}
                 </button>
               </div>
               <textarea
                 rows={3}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Опишіть бажаний рекламний візуал, наприклад: Реклама стоматології, усміхнена дівчина, світлий сучасний інтер'єр, люксовий стиль..."
+                placeholder="Опишіть бажаний рекламний візуал, наприклад: Реклама стоматології, усміхнена дівчина, светлий сучасний інтер'єр, люксовий стиль..."
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition resize-none"
               />
             </div>
 
-            {/* Вибір Ніші */}
+            {/* Ніша */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 Ніша / Тематика
@@ -421,7 +453,7 @@ export default function AdImageStudio() {
               </div>
             </div>
 
-            {/* ПОВНІСТЮ РОБОЧЕ завантаження референсного фото */}
+            {/* Референсне фото */}
             <div className="space-y-2">
               <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                 РЕФЕРЕНСНЕ ФОТО / ТОБАР (IMAGE-TO-IMAGE)
@@ -690,7 +722,7 @@ export default function AdImageStudio() {
         </main>
       )}
 
-      {/* Спливаюче вікно створення проєкту */}
+      {/* Модальне вікно */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#0d1322] border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
