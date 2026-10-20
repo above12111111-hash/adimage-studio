@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AdImage Studio — AI Генератор Рекламних Візуалів",
-  description: "Професійний AI-інструмент для таргетологів та маркетологів. Генерація рекламних банерів та креативів для FB, IG та TikTok.",
+  title: "AdGenix AI — Генератор Рекламних Креативів та Візуалів",
+  description: "Професійний AI-інструмент для таргетологів та маркетологів. Генерація рекламних банерів та макетів для FB, IG та TikTok.",
+  keywords: ["AdGenix", "AdGenix AI", "AI генератор реклами", "створити рекламний банер"],
   verification: {
     google: "cRsQl0GO8rykrxAfDsCCHUcirGqIHC11XBBYGCjbMZQ",
   },
