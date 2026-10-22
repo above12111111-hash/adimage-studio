@@ -5,7 +5,7 @@ import React, { useState } from "react";
 export default function AdImageStudio() {
   // Основні стани генератора
   const [userPrompt, setUserPrompt] = useState("");
-  const [selectedNiche, setSelectedNiche] = useState("Стоматологія & Медичні послуги");
+  const [selectedNiche, setSelectedNiche] = useState("Нерухомість & Ремонт");
   const [selectedFormat, setSelectedFormat] = useState("9:16");
   const [selectedStyle, setSelectedStyle] = useState("Фотореалізм (Photorealism)");
   const [selectedPalette, setSelectedPalette] = useState("Холодна");
@@ -19,13 +19,14 @@ export default function AdImageStudio() {
   const [activeTab, setActiveTab] = useState<"generator" | "prompts" | "history" | "projects">("generator");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
+  const [savedFavorites, setSavedFavorites] = useState<string[]>([]);
 
   // Покращення промпту
   const handleEnhancePrompt = () => {
     if (!userPrompt.trim()) return;
     setUserPrompt(
       (prev) =>
-        `${prev}, highly detailed, bright soft studio light, luxury interior, 8k resolution, professional commercial photograph`
+        `${prev}, highly detailed, bright soft studio light, professional advertising photograph, award winning design, 8k resolution, cinematic composition`
     );
   };
 
@@ -68,24 +69,54 @@ export default function AdImageStudio() {
     }
   };
 
-  // Виправлена функція завантаження з крос-доменним завантаженням та фолбеком
+  // Надійне завантаження через Canvas (обходить CORS блокування браузера)
   const handleDownload = async (imageUrl: string, index: number = 0) => {
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = imageUrl;
 
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `adgenix-creative-${index + 1}.png`;
-      document.body.appendChild(link);
-      link.click();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const dataUrl = canvas.toDataURL("image/png");
+          const link = document.createElement("a");
+          link.href = dataUrl;
+          link.download = `adgenix-creative-${Date.now()}-${index + 1}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      };
 
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
+      img.onerror = async () => {
+        // Резервний варіант якщо crossOrigin заблоковано
+        const res = await fetch(imageUrl);
+        const blob = await res.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = `adgenix-creative-${index + 1}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+      };
     } catch (error) {
       console.error("Download error:", error);
       window.open(imageUrl, "_blank");
+    }
+  };
+
+  const handleToggleFavorite = (url: string) => {
+    if (savedFavorites.includes(url)) {
+      setSavedFavorites(savedFavorites.filter((item) => item !== url));
+    } else {
+      setSavedFavorites([...savedFavorites, url]);
     }
   };
 
@@ -98,10 +129,10 @@ export default function AdImageStudio() {
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col">
-      {/* Верхня навігаційна панель */}
+      {/* Шапка сайту */}
       <header className="border-b border-gray-800 bg-[#0f172a]/60 backdrop-blur px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="bg-indigo-600 p-2 rounded-xl text-white font-bold text-xl">
+          <div className="bg-indigo-600 p-2 rounded-xl text-white font-bold text-xl shadow-lg shadow-indigo-500/30">
             ✨
           </div>
           <div>
@@ -115,7 +146,7 @@ export default function AdImageStudio() {
         <nav className="flex items-center gap-2 bg-[#1e293b]/80 p-1 rounded-xl text-sm border border-gray-700/50">
           <button
             onClick={() => setActiveTab("generator")}
-            className={`px-4 py-1.5 rounded-lg font-medium transition ${
+            className={`px-4 py-1.5 rounded-lg font-medium transition cursor-pointer ${
               activeTab === "generator"
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "text-gray-400 hover:text-white"
@@ -125,7 +156,7 @@ export default function AdImageStudio() {
           </button>
           <button
             onClick={() => setActiveTab("prompts")}
-            className={`px-4 py-1.5 rounded-lg font-medium transition ${
+            className={`px-4 py-1.5 rounded-lg font-medium transition cursor-pointer ${
               activeTab === "prompts"
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "text-gray-400 hover:text-white"
@@ -135,17 +166,17 @@ export default function AdImageStudio() {
           </button>
           <button
             onClick={() => setActiveTab("history")}
-            className={`px-4 py-1.5 rounded-lg font-medium transition ${
+            className={`px-4 py-1.5 rounded-lg font-medium transition cursor-pointer ${
               activeTab === "history"
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "text-gray-400 hover:text-white"
             }`}
           >
-            📚 Історія та Обране
+            📚 Історія та Обране ({savedFavorites.length})
           </button>
           <button
             onClick={() => setActiveTab("projects")}
-            className={`px-4 py-1.5 rounded-lg font-medium transition ${
+            className={`px-4 py-1.5 rounded-lg font-medium transition cursor-pointer ${
               activeTab === "projects"
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "text-gray-400 hover:text-white"
@@ -160,16 +191,16 @@ export default function AdImageStudio() {
             Pro Targetologist Suite
           </span>
           <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-semibold px-3 py-1.5 rounded-lg">
-            ⚡ 42 Кредити
+            ⚡ Unlimited Credits
           </div>
         </div>
       </header>
 
-      {/* Основний вміст в залежності від вкладки */}
+      {/* Головна вкладка: ГЕНЕРАТОР */}
       {activeTab === "generator" && (
         <main className="flex-1 flex overflow-hidden">
-          {/* Ліва панель із налаштуваннями генератора */}
-          <aside className="w-[420px] border-r border-gray-800/80 bg-[#0f172a]/30 p-5 overflow-y-auto flex flex-col gap-5 text-xs">
+          {/* Панель налаштувань */}
+          <aside className="w-[440px] border-r border-gray-800/80 bg-[#0f172a]/30 p-5 overflow-y-auto flex flex-col gap-5 text-xs">
             {/* Текстовий промпт */}
             <div>
               <div className="flex justify-between items-center mb-2">
@@ -178,7 +209,7 @@ export default function AdImageStudio() {
                 </label>
                 <button
                   onClick={handleEnhancePrompt}
-                  className="text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
+                  className="text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 cursor-pointer"
                 >
                   🪄 Покращити промпт
                 </button>
@@ -187,12 +218,12 @@ export default function AdImageStudio() {
                 rows={4}
                 value={userPrompt}
                 onChange={(e) => setUserPrompt(e.target.value)}
-                placeholder="Aesthetic dental clinic advertisement, smiling woman with white teeth, bright soft studio light..."
+                placeholder="Опишіть ваш товар або послугу (наприклад: Будівництво сучасного хай-тек будинку з басейном та вечірньою підсвіткою...)"
                 className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition resize-none"
               />
             </div>
 
-            {/* Вибір ніші */}
+            {/* МАКСИМАЛЬНИЙ СПИСОК НІШ */}
             <div>
               <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                 Ніша / Тематика
@@ -200,18 +231,27 @@ export default function AdImageStudio() {
               <select
                 value={selectedNiche}
                 onChange={(e) => setSelectedNiche(e.target.value)}
-                className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
+                <option>Нерухомість & Ремонт</option>
                 <option>Стоматологія & Медичні послуги</option>
                 <option>Салони краси & Косметологія</option>
-                <option>Нерухомість & Ремонт</option>
                 <option>E-commerce / Товарний бізнес</option>
                 <option>Кав'ярні & Ресторани</option>
-                <option>Автосервіси & Барбершопи</option>
+                <option>Автосервіси & Детейлінг</option>
+                <option>Фитнес, Спорт & Nutri</option>
+                <option>Юридичні & Фінансові послуги</option>
+                <option>Освіта & Онлайн-курси</option>
+                <option>IT & SaaS Продукти</option>
+                <option>Туризм & Готелі</option>
+                <option>Одяг & Мода (Fashion)</option>
+                <option>Дизайн інтер'єру & Архітектура</option>
+                <option>Дитячі товари & Іграшки</option>
+                <option>Послуги для бізнесу (B2B)</option>
               </select>
             </div>
 
-            {/* Вибір формату */}
+            {/* Формати */}
             <div>
               <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                 Формат / Платформа
@@ -226,7 +266,7 @@ export default function AdImageStudio() {
                   <button
                     key={fmt.id}
                     onClick={() => setSelectedFormat(fmt.id)}
-                    className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition ${
+                    className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition cursor-pointer ${
                       selectedFormat === fmt.id
                         ? "bg-indigo-600/20 border-indigo-500 text-white"
                         : "bg-[#1e293b]/40 border-gray-800 text-gray-400 hover:border-gray-700"
@@ -244,7 +284,7 @@ export default function AdImageStudio() {
               </div>
             </div>
 
-            {/* Стиль */}
+            {/* МАКСИМАЛЬНИЙ СПИСОК СТИЛІВ */}
             <div>
               <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                 Візуальний стиль
@@ -252,13 +292,17 @@ export default function AdImageStudio() {
               <select
                 value={selectedStyle}
                 onChange={(e) => setSelectedStyle(e.target.value)}
-                className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
                 <option>Фотореалізм (Photorealism)</option>
-                <option>Мінімалістичний 3D</option>
-                <option>Сучасний графічний дизайн</option>
+                <option>Мінімалістичний 3D Render</option>
+                <option>Сучасний рекламний макет</option>
                 <option>Преміум / Люкс студія</option>
-                <option>Кинематографічний (Cinematic)</option>
+                <option>Кинематографічний (Cinematic Light)</option>
+                <option>Неоновий Cyberpunk</option>
+                <option>Арт-ілюстрація & Вектор</option>
+                <option>Аерографія / Глянцевий журнал</option>
+                <option>Вінтаж / Retro Advertising</option>
               </select>
             </div>
 
@@ -282,7 +326,7 @@ export default function AdImageStudio() {
                   <button
                     key={item}
                     onClick={() => setSelectedPalette(item)}
-                    className={`py-2 px-1 rounded-xl text-[11px] border text-center transition ${
+                    className={`py-2 px-1 rounded-xl text-[11px] border text-center transition cursor-pointer ${
                       selectedPalette === item
                         ? "bg-indigo-600/30 border-indigo-500 text-indigo-200 font-medium"
                         : "bg-[#1e293b]/30 border-gray-800 text-gray-400 hover:border-gray-700"
@@ -294,24 +338,26 @@ export default function AdImageStudio() {
               </div>
             </div>
 
-            {/* Порожнє місце під текст */}
+            {/* Місце під текст */}
             <div>
               <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
-                Порожнє місце під текст
+                Порожнє місце під текст (Copy Space)
               </label>
               <select
                 value={selectedTextSpace}
                 onChange={(e) => setSelectedTextSpace(e.target.value)}
-                className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
                 <option>Без зарезервованого місця</option>
                 <option>Зліва під заголовок</option>
                 <option>Справа під заголовок</option>
                 <option>Знизу під плашку ціни</option>
+                <option>Зверху під оффер</option>
+                <option>Центральна композиція</option>
               </select>
             </div>
 
-            {/* Кількість варіантів та Якість */}
+            {/* Варіанти & Якість */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
@@ -322,7 +368,7 @@ export default function AdImageStudio() {
                     <button
                       key={num}
                       onClick={() => setVariantsCount(num)}
-                      className={`flex-1 py-1 rounded-lg text-center transition ${
+                      className={`flex-1 py-1 rounded-lg text-center transition cursor-pointer ${
                         variantsCount === num
                           ? "bg-indigo-600 text-white font-bold"
                           : "text-gray-400 hover:text-white"
@@ -341,15 +387,15 @@ export default function AdImageStudio() {
                 <select
                   value={selectedQuality}
                   onChange={(e) => setSelectedQuality(e.target.value)}
-                  className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-2 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 h-[38px]"
+                  className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-2 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 h-[38px] cursor-pointer"
                 >
                   <option>Стандарт (Рекомендовано)</option>
-                  <option>Висока (4K HD)</option>
+                  <option>Максимальна Ultra HD (4K)</option>
                 </select>
               </div>
             </div>
 
-            {/* Зона завантаження референсу */}
+            {/* Референс */}
             <div>
               <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                 Референсне фото / Товар (Image-to-Image)
@@ -361,7 +407,7 @@ export default function AdImageStudio() {
               </div>
             </div>
 
-            {/* Головна кнопка запуску */}
+            {/* Кнопка Запуску */}
             <button
               onClick={handleGenerate}
               disabled={isLoading}
@@ -373,12 +419,12 @@ export default function AdImageStudio() {
                   Генеруємо рекламний візуал...
                 </>
               ) : (
-                <>⚡ Згенерувати візуали (1 кредити)</>
+                <>⚡ Згенерувати візуали</>
               )}
             </button>
           </aside>
 
-          {/* Права частина — відображення результатів */}
+          {/* Область відображення результатів */}
           <section className="flex-1 bg-[#0b0f19] p-6 overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -400,8 +446,8 @@ export default function AdImageStudio() {
               {isLoading ? (
                 <div className="text-center">
                   <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                  <p className="text-gray-300 font-medium">Нейромережа Flux створює креатив...</p>
-                  <p className="text-xs text-gray-500 mt-1">Зазвичай це займає 5–10 секунд</p>
+                  <p className="text-gray-300 font-medium">Нейромережа Flux створює рекламний макет...</p>
+                  <p className="text-xs text-gray-500 mt-1">Зазвичай це займає 5–8 секунд</p>
                 </div>
               ) : generatedImages.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
@@ -420,6 +466,17 @@ export default function AdImageStudio() {
                         <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wider uppercase border border-white/10">
                           {selectedFormat} • FORMAT
                         </div>
+
+                        <button
+                          onClick={() => handleToggleFavorite(imgUrl)}
+                          className={`absolute top-3 right-3 p-2 rounded-xl backdrop-blur-md border transition cursor-pointer ${
+                            savedFavorites.includes(imgUrl)
+                              ? "bg-amber-500 text-white border-amber-400"
+                              : "bg-black/50 text-gray-300 border-white/10 hover:text-white"
+                          }`}
+                        >
+                          ★
+                        </button>
                       </div>
 
                       <div className="p-4 flex flex-col gap-3">
@@ -429,7 +486,7 @@ export default function AdImageStudio() {
 
                         <button
                           onClick={() => handleDownload(imgUrl, index)}
-                          className="w-full bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 text-indigo-200 hover:text-white font-medium py-2 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/20"
                         >
                           ⬇️ Завантажити зображення (PNG)
                         </button>
@@ -448,7 +505,7 @@ export default function AdImageStudio() {
         </main>
       )}
 
-      {/* Вкладка Проєкти */}
+      {/* Вкладка ПРОЄКТИ */}
       {activeTab === "projects" && (
         <div className="flex-1 p-8 max-w-6xl mx-auto w-full">
           <div className="flex justify-between items-center mb-6">
@@ -458,46 +515,101 @@ export default function AdImageStudio() {
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer"
             >
               + Новий проєкт
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#1e293b]/40 border border-gray-800 p-5 rounded-2xl">
-              <h3 className="font-bold text-lg mb-1">Стоматологія "Smile"</h3>
-              <p className="text-xs text-gray-400 mb-4">12 рекламних креативів</p>
-              <button className="text-xs text-indigo-400 hover:underline font-medium">Переглянути папку ➔</button>
-            </div>
-            <div className="bg-[#1e293b]/40 border border-gray-800 p-5 rounded-2xl">
+            <div className="bg-[#1e293b]/40 border border-gray-800 p-5 rounded-2xl hover:border-gray-700 transition">
               <h3 className="font-bold text-lg mb-1">ЖК "Комфорт Таун"</h3>
+              <p className="text-xs text-gray-400 mb-4">14 рекламних креативів</p>
+              <button className="text-xs text-indigo-400 hover:underline font-medium cursor-pointer">
+                Переглянути папку ➔
+              </button>
+            </div>
+            <div className="bg-[#1e293b]/40 border border-gray-800 p-5 rounded-2xl hover:border-gray-700 transition">
+              <h3 className="font-bold text-lg mb-1">Стоматологія "Smile"</h3>
               <p className="text-xs text-gray-400 mb-4">8 рекламних креативів</p>
-              <button className="text-xs text-indigo-400 hover:underline font-medium">Переглянути папку ➔</button>
+              <button className="text-xs text-indigo-400 hover:underline font-medium cursor-pointer">
+                Переглянути папку ➔
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Вкладка Бібліотека промптів */}
+      {/* Вкладка ПРОМПТИ */}
       {activeTab === "prompts" && (
         <div className="flex-1 p-8 max-w-6xl mx-auto w-full">
           <h2 className="text-2xl font-bold mb-2">🔖 Готові рекламні шаблони</h2>
-          <p className="text-sm text-gray-400 mb-6">Використовуйте перевірені промпти для підвищення конверсії</p>
+          <p className="text-sm text-gray-400 mb-6">Натисніть на будь-який шаблон, щоб вставити його в генератор</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-[#1e293b]/30 border border-gray-800 p-4 rounded-xl">
-              <span className="text-xs font-bold text-indigo-400 uppercase">Beauty & Spa</span>
-              <p className="text-sm mt-2 text-gray-200">"Modern luxury aesthetic cosmetology clinic, clean minimalist design, soft pastel lighting..."</p>
-            </div>
+            {[
+              {
+                title: "Будівництво & Нерухомість",
+                prompt: "Modern luxury high-tech villa with swimming pool, evening warm lighting, architectural photography, 8k resolution",
+              },
+              {
+                title: "Стоматологія & Медицина",
+                prompt: "Aesthetic dental clinic advertisement, smiling woman with white teeth, bright soft studio light, luxury interior",
+              },
+              {
+                title: "E-Commerce / Товари",
+                prompt: "Commercial product photography of premium cosmetic bottle on water reflection background, studio lighting, highly detailed",
+              },
+              {
+                title: "Кав'ярня & Ресторани",
+                prompt: "Fresh cup of cappuccino with latte art, croissant on wooden table, warm cozy morning coffee shop environment",
+              },
+            ].map((item, index) => (
+              <div
+                key={index}
+                onClick={() => {
+                  setUserPrompt(item.prompt);
+                  setActiveTab("generator");
+                }}
+                className="bg-[#1e293b]/30 border border-gray-800 p-5 rounded-2xl hover:border-indigo-500/50 cursor-pointer transition flex flex-col justify-between"
+              >
+                <div>
+                  <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">
+                    {item.title}
+                  </span>
+                  <p className="text-sm text-gray-200 italic">"{item.prompt}"</p>
+                </div>
+                <span className="text-xs text-indigo-400 mt-4 font-medium flex items-center gap-1">
+                  Використати у генераторі ➔
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Вкладка Історія */}
+      {/* Вкладка ІСТОРІЯ ТА ОБРАНЕ */}
       {activeTab === "history" && (
         <div className="flex-1 p-8 max-w-6xl mx-auto w-full">
-          <h2 className="text-2xl font-bold mb-2">📚 Історія генерацій</h2>
-          <p className="text-sm text-gray-400">Усі ваші раніше згенеровані матеріали збережені тут</p>
+          <h2 className="text-2xl font-bold mb-2">📚 Обрані та збережені креативи</h2>
+          <p className="text-sm text-gray-400 mb-6">Ваші збережені рекламні візуали</p>
+
+          {savedFavorites.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {savedFavorites.map((url, idx) => (
+                <div key={idx} className="bg-[#131b2e] border border-gray-800 rounded-2xl overflow-hidden p-3 flex flex-col gap-3">
+                  <img src={url} alt="Saved" className="w-full aspect-square object-cover rounded-xl" />
+                  <button
+                    onClick={() => handleDownload(url, idx)}
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-xl text-xs transition"
+                  >
+                    ⬇️ Скачати PNG
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">Ви поки не додавали матеріали в обране. Натискайте ★ на генераціях!</p>
+          )}
         </div>
       )}
 
@@ -511,7 +623,7 @@ export default function AdImageStudio() {
               type="text"
               value={newProjectName}
               onChange={(e) => setNewProjectName(e.target.value)}
-              placeholder="Наприклад: Кав'ярня 'Арома'"
+              placeholder="Наприклад: ЖК 'Комфорт Таун'"
               className="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-3 text-sm text-white mb-5 focus:outline-none focus:border-indigo-500"
             />
             <div className="flex gap-2 justify-end">
