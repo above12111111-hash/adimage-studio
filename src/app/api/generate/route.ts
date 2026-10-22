@@ -8,7 +8,7 @@ const replicate = new Replicate({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { prompt, aspectRatio, niche, style, image } = body;
+    const { prompt, aspectRatio, niche, style } = body;
 
     if (!prompt) {
       return NextResponse.json(
@@ -24,43 +24,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const adPrompt = `High-converting commercial advertisement banner for ${niche || "business"}. Main Subject: ${prompt}. Style: ${style || "Modern professional advertising design"}, studio lighting, 8k resolution, highly detailed, photorealistic.`;
+    const adPrompt = `High-converting commercial advertisement banner for ${niche || "business"}. Main Subject: ${prompt}. Style: ${style || "Modern"}, studio lighting, 8k resolution, highly detailed, photorealistic.`;
 
     let aspect_ratio = "1:1";
     if (aspectRatio === "9:16") aspect_ratio = "9:16";
     if (aspectRatio === "4:5") aspect_ratio = "4:5";
     if (aspectRatio === "1.91:1") aspect_ratio = "16:9";
 
-    const inputData: any = {
-      prompt: adPrompt,
-      aspect_ratio: aspect_ratio,
-      output_format: "png",
-      output_quality: 95,
-    };
-
-    // Якщо користувач завантажив референс, додаємо його до запиту
-    if (image) {
-      inputData.image = image;
-    }
-
+    // Строго передаємо лише текст і формат (без несумісного параметра image)
     const output: any = await replicate.run("black-forest-labs/flux-schnell", {
-      input: inputData,
+      input: {
+        prompt: adPrompt,
+        aspect_ratio: aspect_ratio,
+        output_format: "png",
+        output_quality: 95,
+      },
     });
 
-    // БЕЗПЕЧНЕ ВИЛУЧЕННЯ URL (підтримує і старі, і нові версії Replicate)
+    // Універсальний парсер (підтримує будь-яку версію SDK від Replicate)
     let finalUrl = "";
-    
-    if (Array.isArray(output) && output.length > 0) {
-      // Якщо це об'єкт потоку, викликаємо функцію .url()
-      finalUrl = typeof output[0].url === "function" ? output[0].url() : String(output[0]);
-    } else if (typeof output === "string") {
-      finalUrl = output;
-    } else if (output && output.url) {
-      finalUrl = typeof output.url === "function" ? output.url() : String(output.url);
+    const firstOutput = Array.isArray(output) ? output[0] : output;
+
+    if (firstOutput) {
+      if (typeof firstOutput === "string") {
+        finalUrl = firstOutput;
+      } else if (typeof firstOutput.url === "function") {
+        finalUrl = firstOutput.url();
+      } else if (firstOutput.url) {
+        finalUrl = firstOutput.url;
+      } else {
+        finalUrl = String(firstOutput);
+      }
     }
 
     if (!finalUrl || finalUrl === "null" || finalUrl === "undefined") {
-      throw new Error("Не вдалося отримати коректне посилання на фото від Replicate.");
+      throw new Error(`Помилка API. Replicate повернув: ${JSON.stringify(output)}`);
     }
 
     return NextResponse.json({ images: [finalUrl] });
