@@ -1,390 +1,291 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { 
-  Sparkles, 
-  Upload, 
-  Image as ImageIcon, 
-  Download, 
-  Type, 
-  FileText, 
-  Bookmark, 
-  Layers, 
-  Folder, 
-  Zap,
-  CheckCircle2,
-  Loader2,
-  Copy,
-  Plus,
-  X,
-  Trash2,
-  FolderOpen,
-  Wand2
-} from "lucide-react";
+import React, { useState } from "react";
 
 export default function AdImageStudio() {
-  const [activeTab, setActiveTab] = useState("generator");
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  // Основні стани генератора
+  const [userPrompt, setUserPrompt] = useState("");
+  const [selectedNiche, setSelectedNiche] = useState("Стоматологія & Медичні послуги");
+  const [selectedFormat, setSelectedFormat] = useState("9:16");
+  const [selectedStyle, setSelectedStyle] = useState("Фотореалізм (Photorealism)");
+  const [selectedPalette, setSelectedPalette] = useState("Холодна");
+  const [selectedTextSpace, setSelectedTextSpace] = useState("Без зарезервованого місця");
+  const [variantsCount, setVariantsCount] = useState(1);
+  const [selectedQuality, setSelectedQuality] = useState("Стандарт (Рекомендовано)");
 
-  // Синхронізація з кнопками браузера "Назад" / "Вперед"
-  useEffect(() => {
-    const handlePopState = () => {
-      const hash = window.location.hash.replace("#", "");
-      if (hash.startsWith("project-")) {
-        setActiveTab("projects");
-        setSelectedProject(decodeURIComponent(hash.replace("project-", "")));
-      } else if (["generator", "prompts", "history", "projects"].includes(hash)) {
-        setActiveTab(hash);
-        setSelectedProject(null);
-      } else {
-        setActiveTab("generator");
-        setSelectedProject(null);
-      }
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    handlePopState();
-
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  const changeTab = (tab: string, project: string | null = null) => {
-    setActiveTab(tab);
-    setSelectedProject(project);
-    const newHash = project ? `#project-${encodeURIComponent(project)}` : `#${tab}`;
-    window.history.pushState(null, "", newHash);
-  };
-
-  // Стан форм генератора
-  const [prompt, setPrompt] = useState("");
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const [niche, setNiche] = useState("Краса та б'юті");
-  const [aspectRatio, setAspectRatio] = useState("1:1");
-  const [style, setStyle] = useState("Фотореалізм");
-  const [mood, setMood] = useState("Тепла");
-  const [textSpace, setTextSpace] = useState("Без зарезервованого місця");
-  const [variantsCount, setVariantsCount] = useState(2);
-  const [quality, setQuality] = useState("Стандарт (Рекомендовано)");
-
-  // Робоча функція покращення промпту
-  const handleEnhancePrompt = () => {
-    if (!prompt.trim()) {
-      alert("Введіть хоча б декілька слів у полі промпту, щоб AI міг його покращити!");
-      return;
-    }
-
-    setIsEnhancing(true);
-
-    setTimeout(() => {
-      const enhanced = `${prompt.trim()}, ${niche.toLowerCase()} niche advertisement, ${style.toLowerCase()} visual style, ${mood.toLowerCase()} tone, hyper-realistic details, professional commercial photography, soft studio lighting, ultra-high resolution, 8k --ar ${aspectRatio}`;
-      setPrompt(enhanced);
-      setIsEnhancing(false);
-    }, 600);
-  };
-
-  // Референсне фото (Image-to-Image)
-  const [referenceFile, setReferenceFile] = useState<File | null>(null);
-  const [referencePreview, setReferencePreview] = useState<string | null>(null);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setReferenceFile(file);
-      setReferencePreview(URL.createObjectURL(file));
-    }
-  };
-
-  const removeReference = () => {
-    setReferenceFile(null);
-    setReferencePreview(null);
-  };
-
-  const [loading, setLoading] = useState(false);
-  const [images, setImages] = useState<string[]>([
-    "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60"
-  ]);
-
-  // Стан проєктів
-  const [projects, setProjects] = useState([
-    { id: 1, name: "Клієнт: Клініка DentArt", count: 14 },
-    { id: 2, name: "Клієнт: Бренд одягу Urban", count: 8 },
-    { id: 3, name: "Особистий проєкт: E-com", count: 22 },
-  ]);
+  // Стани UI та завантаження
+  const [isLoading, setIsLoading] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<"generator" | "prompts" | "history" | "projects">("generator");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
 
-  const handleAddProject = () => {
-    if (!newProjectName.trim()) return;
-    setProjects([
-      ...projects,
-      { id: Date.now(), name: newProjectName, count: 0 }
-    ]);
-    setNewProjectName("");
-    setIsModalOpen(false);
+  // Покращення промпту
+  const handleEnhancePrompt = () => {
+    if (!userPrompt.trim()) return;
+    setUserPrompt(
+      (prev) =>
+        `${prev}, highly detailed, bright soft studio light, luxury interior, 8k resolution, professional commercial photograph`
+    );
   };
 
-  const handleDeleteProject = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setProjects(projects.filter((p) => p.id !== id));
-    if (selectedProject) changeTab("projects", null);
-  };
-
-  // Функція генерації
+  // Запит до сервера для генерації
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      alert("Будь ласка, введіть описовий промпт перед генерацією!");
+    if (!userPrompt.trim()) {
+      alert("Будь ласка, введіть опис для рекламного креативу!");
       return;
     }
 
-    setLoading(true);
-
+    setIsLoading(true);
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt,
-          niche,
-          aspectRatio,
-          style,
-          mood,
-          textSpace,
-          variantsCount,
-          quality,
-          hasReference: !!referenceFile
+          prompt: userPrompt,
+          aspectRatio: selectedFormat,
+          niche: selectedNiche,
+          style: selectedStyle,
         }),
       });
 
       const data = await response.json();
 
-      if (data.images && data.images.length > 0) {
-        setImages(data.images);
-      } else if (data.image) {
-        setImages([data.image]);
-      } else if (data.error) {
-        alert("Помилка генерації: " + data.error);
+      if (!response.ok) {
+        alert(data.error || "Помилка при генерації зображення.");
+        setIsLoading(false);
+        return;
       }
-    } catch (err) {
-      console.error(err);
-      alert("Сталася помилка при відправці запиту на сервер.");
+
+      if (data.images && data.images.length > 0) {
+        setGeneratedImages(data.images);
+      }
+    } catch (error) {
+      console.error("Error generating image:", error);
+      alert("Сталася помилка при з'єднанні з сервером.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  // Виправлена функція завантаження з крос-доменним завантаженням та фолбеком
+  const handleDownload = async (imageUrl: string, index: number = 0) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `adgenix-creative-${index + 1}.png`;
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download error:", error);
+      window.open(imageUrl, "_blank");
+    }
+  };
+
+  const handleAddProject = () => {
+    if (!newProjectName.trim()) return;
+    alert(`Проєкт "${newProjectName}" успішно створено!`);
+    setNewProjectName("");
+    setIsModalOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col font-sans">
-      {/* Хедер */}
-      <header className="border-b border-slate-800 bg-[#0d1322]/80 backdrop-blur px-6 py-3 flex items-center justify-between sticky top-0 z-50">
+    <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col">
+      {/* Верхня навігаційна панель */}
+      <header className="border-b border-gray-800 bg-[#0f172a]/60 backdrop-blur px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <Sparkles className="w-5 h-5 text-white" />
+          <div className="bg-indigo-600 p-2 rounded-xl text-white font-bold text-xl">
+            ✨
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-none tracking-wide text-white">AdImage Studio</h1>
-            <p className="text-xs text-slate-400 mt-1">AI-Генератор рекламних візуалів для FB & IG</p>
+            <h1 className="font-bold text-lg leading-tight">AdImage Studio</h1>
+            <p className="text-xs text-gray-400">
+              AI-Генератор рекламних візуалів для FB & IG
+            </p>
           </div>
         </div>
 
-        {/* Навігація */}
-        <nav className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-sm">
-          <button 
-            onClick={() => changeTab("generator")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
-              activeTab === "generator" 
-                ? "bg-indigo-600 text-white shadow-sm" 
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+        <nav className="flex items-center gap-2 bg-[#1e293b]/80 p-1 rounded-xl text-sm border border-gray-700/50">
+          <button
+            onClick={() => setActiveTab("generator")}
+            className={`px-4 py-1.5 rounded-lg font-medium transition ${
+              activeTab === "generator"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "text-gray-400 hover:text-white"
             }`}
           >
-            <Sparkles className="w-4 h-4" /> Генератор
+            ⚡ Генератор
           </button>
-          <button 
-            onClick={() => changeTab("prompts")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
-              activeTab === "prompts" 
-                ? "bg-indigo-600 text-white shadow-sm" 
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+          <button
+            onClick={() => setActiveTab("prompts")}
+            className={`px-4 py-1.5 rounded-lg font-medium transition ${
+              activeTab === "prompts"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "text-gray-400 hover:text-white"
             }`}
           >
-            <Bookmark className="w-4 h-4" /> Бібліотека промптів
+            🔖 Бібліотека промптів
           </button>
-          <button 
-            onClick={() => changeTab("history")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
-              activeTab === "history" 
-                ? "bg-indigo-600 text-white shadow-sm" 
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+          <button
+            onClick={() => setActiveTab("history")}
+            className={`px-4 py-1.5 rounded-lg font-medium transition ${
+              activeTab === "history"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "text-gray-400 hover:text-white"
             }`}
           >
-            <Layers className="w-4 h-4" /> Історія та Обране
+            📚 Історія та Обране
           </button>
-          <button 
-            onClick={() => changeTab("projects")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
-              activeTab === "projects" 
-                ? "bg-indigo-600 text-white shadow-sm" 
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+          <button
+            onClick={() => setActiveTab("projects")}
+            className={`px-4 py-1.5 rounded-lg font-medium transition ${
+              activeTab === "projects"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "text-gray-400 hover:text-white"
             }`}
           >
-            <Folder className="w-4 h-4" /> Проєкти & Клієнти
+            📁 Проєкти & Клієнти
           </button>
         </nav>
 
         <div className="flex items-center gap-3">
-          <span className="hidden sm:inline-block text-xs bg-indigo-950/80 text-indigo-300 border border-indigo-800/50 px-3 py-1.5 rounded-full font-medium">
+          <span className="text-xs bg-indigo-950/80 border border-indigo-500/30 text-indigo-300 px-3 py-1.5 rounded-lg font-medium">
             Pro Targetologist Suite
           </span>
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-400">
-            <Zap className="w-3.5 h-3.5 fill-amber-400" />
-            <span>42 Кредити</span>
+          <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-semibold px-3 py-1.5 rounded-lg">
+            ⚡ 42 Кредити
           </div>
         </div>
       </header>
 
-      {/* Вкладка 1: Генератор */}
+      {/* Основний вміст в залежності від вкладки */}
       {activeTab === "generator" && (
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          <aside className="w-full lg:w-[420px] border-r border-slate-800/80 bg-[#0d1322] p-5 flex flex-col gap-5 overflow-y-auto max-h-[calc(100vh-61px)]">
-            
-            {/* Текстовий промпт з робочою кнопкою "Покращити промпт" */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+        <main className="flex-1 flex overflow-hidden">
+          {/* Ліва панель із налаштуваннями генератора */}
+          <aside className="w-[420px] border-r border-gray-800/80 bg-[#0f172a]/30 p-5 overflow-y-auto flex flex-col gap-5 text-xs">
+            {/* Текстовий промпт */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="font-semibold text-gray-300 uppercase tracking-wider">
                   Текстовий запит (PROMPT)
                 </label>
-                <button 
+                <button
                   onClick={handleEnhancePrompt}
-                  disabled={isEnhancing}
-                  className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium transition cursor-pointer disabled:opacity-50"
+                  className="text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
                 >
-                  {isEnhancing ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin text-indigo-400" />
-                      <span>Покращуємо...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="w-3 h-3" />
-                      <span>Покращити промпт</span>
-                    </>
-                  )}
+                  🪄 Покращити промпт
                 </button>
               </div>
               <textarea
-                rows={3}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Опишіть бажаний рекламний візуал, наприклад: Реклама стоматології, усміхнена дівчина, светлий сучасний інтер'єр, люксовий стиль..."
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition resize-none"
+                rows={4}
+                value={userPrompt}
+                onChange={(e) => setUserPrompt(e.target.value)}
+                placeholder="Aesthetic dental clinic advertisement, smiling woman with white teeth, bright soft studio light..."
+                className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition resize-none"
               />
             </div>
 
-            {/* Ніша */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+            {/* Вибір ніші */}
+            <div>
+              <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                 Ніша / Тематика
               </label>
               <select
-                value={niche}
-                onChange={(e) => setNiche(e.target.value)}
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer"
+                value={selectedNiche}
+                onChange={(e) => setSelectedNiche(e.target.value)}
+                className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500"
               >
-                <option value="Краса та б'юті">Краса та б'юті (Косметика, Догляд, Салони)</option>
-                <option value="Нерухомість">Нерухомість & Дизайн інтер'єру</option>
-                <option value="E-commerce / Товарка">E-commerce / Товарний бізнес</option>
-                <option value="Одяг та мода">Одяг, Взуття та Аксесуари</option>
-                <option value="Ювелірні вироби">Ювелірні вироби & Годинники</option>
-                <option value="Ресторани та їжа">Ресторани, Кафе & Доставка їжі</option>
-                <option value="Стоматологія та медицина">Стоматологія & Медичні послуги</option>
-                <option value="Послуги & Консалтинг">Послуги, Юриспруденція & Консалтинг</option>
-                <option value="Фитнес & Здоров'я">Фитнес, Спорт & Здорове харчування</option>
-                <option value="Автобізнес">Автосалони, Детейлінг, СТО & Автопрокат</option>
-                <option value="Освіта та інфобізнес">Освіта, Онлайн-курси & Інфобізнес</option>
-                <option value="Туризм та готелі">Туризм, Готелі & Відпочинок</option>
-                <option value="IT & Стартапи">IT, Софт & Цифрові продукти</option>
-                <option value="Крипто & Web3">Крипто, Фінанси & Трейдинг</option>
-                <option value="Дитячі товари">Дитячі товари & Іграшки</option>
-                <option value="Зоотовари">Зоотовари & Ветклініки</option>
-                <option value="Будівництво та ремонт">Будівництво, Майстри & Ремонт</option>
-                <option value="Електроніка та гаджети">Електроніка, Смартфони & Гаджети</option>
-                <option value="Парфумерія">Парфумерія & Аромати</option>
-                <option value="Універсальний рекламний банер">Універсальний рекламний банер</option>
+                <option>Стоматологія & Медичні послуги</option>
+                <option>Салони краси & Косметологія</option>
+                <option>Нерухомість & Ремонт</option>
+                <option>E-commerce / Товарний бізнес</option>
+                <option>Кав'ярні & Ресторани</option>
+                <option>Автосервіси & Барбершопи</option>
               </select>
             </div>
 
-            {/* Формат */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+            {/* Вибір формату */}
+            <div>
+              <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                 Формат / Платформа
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { id: "1:1", label: "1:1 Square", sub: "FB/IG Feed" },
-                  { id: "4:5", label: "4:5 Portrait", sub: "Instagram Feed" },
-                  { id: "9:16", label: "9:16 Vertical", sub: "Stories / Reels / TikTok" },
-                  { id: "1.91:1", label: "1.91:1 Landscape", sub: "FB Landscape Banner" },
-                ].map((item) => (
+                  { id: "1:1", name: "1:1 Square", sub: "FB/IG Feed" },
+                  { id: "4:5", name: "4:5 Portrait", sub: "Instagram Feed" },
+                  { id: "9:16", name: "9:16 Vertical", sub: "Stories / Reels / TikTok" },
+                  { id: "1.91:1", name: "1.91:1 Landscape", sub: "FB Landscape Banner" },
+                ].map((fmt) => (
                   <button
-                    key={item.id}
-                    onClick={() => setAspectRatio(item.id)}
-                    className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                      aspectRatio === item.id
-                        ? "bg-indigo-600/15 border-indigo-500 text-white"
-                        : "bg-slate-950/40 border-slate-800/80 text-slate-400 hover:border-slate-700"
+                    key={fmt.id}
+                    onClick={() => setSelectedFormat(fmt.id)}
+                    className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition ${
+                      selectedFormat === fmt.id
+                        ? "bg-indigo-600/20 border-indigo-500 text-white"
+                        : "bg-[#1e293b]/40 border-gray-800 text-gray-400 hover:border-gray-700"
                     }`}
                   >
                     <div className="flex justify-between items-center w-full">
-                      <span className="text-xs font-semibold">{item.label}</span>
-                      <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded font-mono text-slate-300">{item.id}</span>
+                      <span className="font-medium text-xs">{fmt.name}</span>
+                      <span className="text-[10px] bg-gray-800 px-1.5 py-0.5 rounded text-gray-400">
+                        {fmt.id}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-slate-500 mt-1">{item.sub}</span>
+                    <span className="text-[10px] text-gray-500 mt-1">{fmt.sub}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Візуальний стиль */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+            {/* Стиль */}
+            <div>
+              <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                 Візуальний стиль
               </label>
               <select
-                value={style}
-                onChange={(e) => setStyle(e.target.value)}
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer"
+                value={selectedStyle}
+                onChange={(e) => setSelectedStyle(e.target.value)}
+                className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500"
               >
-                <option value="Фотореалізм">Фотореалізм (Photorealistic)</option>
-                <option value="Студійна зйомка">Студійна зйомка (Studio Soft Light)</option>
-                <option value="Люксовий глянцевий">Люксовий глянцевий (Commercial / Premium)</option>
-                <option value="3D Рендер / Мінімалізм">3D Рендер / Мінімалізм</option>
-                <option value="Вектор / Ілюстрація">Вектор / Графічна Ілюстрація</option>
-                <option value="Lifestyle">Lifestyle / Кадри з живими людьми</option>
-                <option value="Кинематографічний">Кінематографічний (Cinematic Drama)</option>
-                <option value="Неон & Хайтек">Неон & Хайтек (Cyberpunk / Modern Tech)</option>
-                <option value="Flat Lay">Flat Lay / Розкладка товарів зверху</option>
-                <option value="Макро / Деталізація">Макрозйомка / Текстури та деталі</option>
-                <option value="Ретро / Вінтаж">Ретро / Вінтаж (80s / Film Grain)</option>
-                <option value="Мінімалістичний поп-арт">Мінімалістичний Поп-арт</option>
-                <option value="Абстрактна естетика">Абстрактна естетика & Геометрія</option>
-                <option value="Акварель / Хендмейд">Акварель / Хендмейд ілюстрація</option>
+                <option>Фотореалізм (Photorealism)</option>
+                <option>Мінімалістичний 3D</option>
+                <option>Сучасний графічний дизайн</option>
+                <option>Преміум / Люкс студія</option>
+                <option>Кинематографічний (Cinematic)</option>
               </select>
             </div>
 
-            {/* Настрій & Палітра */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+            {/* Настрій та палітра */}
+            <div>
+              <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                 Настрій & Палітра
               </label>
               <div className="grid grid-cols-3 gap-2">
-                {["Тепла", "Холодна", "Пастельна", "Контрастна", "Монохром", "Колір бренду", "Темна люкс", "Яскрава / Неонова", "Природна / Нюд"].map((item) => (
+                {[
+                  "Тепла",
+                  "Холодна",
+                  "Пастельна",
+                  "Контрастна",
+                  "Монохром",
+                  "Колір бренду",
+                  "Темна люкс",
+                  "Яскрава / Неонова",
+                  "Природна / Нюд",
+                ].map((item) => (
                   <button
                     key={item}
-                    onClick={() => setMood(item)}
-                    className={`py-2 px-1.5 text-[11px] rounded-xl border text-center transition font-medium cursor-pointer ${
-                      mood === item
-                        ? "bg-indigo-600/20 border-indigo-500 text-indigo-300"
-                        : "bg-slate-950/40 border-slate-800/80 text-slate-400 hover:border-slate-700"
+                    onClick={() => setSelectedPalette(item)}
+                    className={`py-2 px-1 rounded-xl text-[11px] border text-center transition ${
+                      selectedPalette === item
+                        ? "bg-indigo-600/30 border-indigo-500 text-indigo-200 font-medium"
+                        : "bg-[#1e293b]/30 border-gray-800 text-gray-400 hover:border-gray-700"
                     }`}
                   >
                     {item}
@@ -393,41 +294,38 @@ export default function AdImageStudio() {
               </div>
             </div>
 
-            {/* Місце під текст */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+            {/* Порожнє місце під текст */}
+            <div>
+              <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                 Порожнє місце під текст
               </label>
               <select
-                value={textSpace}
-                onChange={(e) => setTextSpace(e.target.value)}
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer"
+                value={selectedTextSpace}
+                onChange={(e) => setSelectedTextSpace(e.target.value)}
+                className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500"
               >
-                <option value="Без зарезервованого місця">Без зарезервованого місця</option>
-                <option value="Зверху">Зверху (для заголовка / плашки)</option>
-                <option value="Знизу">Знизу (для оферу / кнопки)</option>
-                <option value="Зліва">Зліва (для текстового блоку)</option>
-                <option value="Справа">Справа (для текстового блоку)</option>
-                <option value="Центральний об'єкт з розмитим фоном">Центральний об'єкт з розмитим фоном</option>
-                <option value="Рамка / Вільні краї навколо">Рамка / Вільні краї навколо</option>
+                <option>Без зарезервованого місця</option>
+                <option>Зліва під заголовок</option>
+                <option>Справа під заголовок</option>
+                <option>Знизу під плашку ціни</option>
               </select>
             </div>
 
-            {/* Кількість і Якість */}
+            {/* Кількість варіантів та Якість */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+              <div>
+                <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                   Кількість варіантів
                 </label>
-                <div className="flex bg-slate-950/60 border border-slate-800 rounded-xl p-1 gap-1">
+                <div className="flex bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-1 justify-between">
                   {[1, 2, 4, 6].map((num) => (
                     <button
                       key={num}
                       onClick={() => setVariantsCount(num)}
-                      className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
+                      className={`flex-1 py-1 rounded-lg text-center transition ${
                         variantsCount === num
-                          ? "bg-indigo-600 text-white"
-                          : "text-slate-400 hover:text-slate-200"
+                          ? "bg-indigo-600 text-white font-bold"
+                          : "text-gray-400 hover:text-white"
                       }`}
                     >
                       {num}
@@ -436,327 +334,194 @@ export default function AdImageStudio() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+              <div>
+                <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                   Якість генерації
                 </label>
                 <select
-                  value={quality}
-                  onChange={(e) => setQuality(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer"
+                  value={selectedQuality}
+                  onChange={(e) => setSelectedQuality(e.target.value)}
+                  className="w-full bg-[#1e293b]/60 border border-gray-700/60 rounded-xl p-2 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 h-[38px]"
                 >
-                  <option value="Стандарт (Рекомендовано)">Стандарт (Рекомендовано)</option>
-                  <option value="Висока (4K HD)">Висока (4K HD)</option>
-                  <option value="Ультра (8K Studio Render)">Ультра (8K Studio Render)</option>
-                  <option value="Максимальна (8K RAW Fine Detail)">Максимальна (8K RAW Fine Detail)</option>
+                  <option>Стандарт (Рекомендовано)</option>
+                  <option>Висока (4K HD)</option>
                 </select>
               </div>
             </div>
 
-            {/* Референсне фото */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold tracking-wider text-slate-300 uppercase">
-                РЕФЕРЕНСНЕ ФОТО / ТОБАР (IMAGE-TO-IMAGE)
+            {/* Зона завантаження референсу */}
+            <div>
+              <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
+                Референсне фото / Товар (Image-to-Image)
               </label>
-              
-              {referencePreview ? (
-                <div className="relative border border-indigo-500/50 rounded-xl p-2 bg-slate-950/80 flex items-center gap-3">
-                  <img 
-                    src={referencePreview} 
-                    alt="Reference preview" 
-                    className="w-12 h-12 object-cover rounded-lg border border-slate-800"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-slate-200 truncate">{referenceFile?.name}</p>
-                    <p className="text-[10px] text-emerald-400">Готово для Image-to-Image</p>
-                  </div>
-                  <button 
-                    onClick={removeReference}
-                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition cursor-pointer"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <label className="border-2 border-dashed border-slate-800 hover:border-indigo-500/50 rounded-xl p-4 text-center cursor-pointer bg-slate-950/30 transition flex flex-col items-center justify-center block">
-                  <Upload className="w-5 h-5 text-indigo-400 mb-1" />
-                  <p className="text-xs text-slate-300 font-medium">Завантажити референс</p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">PNG, JPG, WEBP до 10MB</p>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={handleFileChange} 
-                  />
-                </label>
-              )}
+              <div className="border-2 border-dashed border-gray-800 rounded-xl p-4 text-center cursor-pointer hover:border-gray-700 transition bg-[#1e293b]/20">
+                <span className="text-xl block mb-1">📤</span>
+                <p className="text-gray-400 font-medium">Завантажити референс</p>
+                <p className="text-[10px] text-gray-600">PNG, JPG, WEBP до 10MB</p>
+              </div>
             </div>
 
-            {/* Кнопка запуску */}
-            <button 
+            {/* Головна кнопка запуску */}
+            <button
               onClick={handleGenerate}
-              disabled={loading}
-              className="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transition mt-2 cursor-pointer"
+              disabled={isLoading}
+              className="w-full mt-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2 text-sm disabled:opacity-50 cursor-pointer"
             >
-              {loading ? (
+              {isLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin text-white" />
-                  <span>Генеруємо...</span>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Генеруємо рекламний візуал...
                 </>
               ) : (
-                <>
-                  <Zap className="w-4 h-4 fill-white" />
-                  <span>Згенерувати візуали ({variantsCount} кредити)</span>
-                </>
+                <>⚡ Згенерувати візуали (1 кредити)</>
               )}
             </button>
           </aside>
 
-          <main className="flex-1 p-6 overflow-y-auto bg-[#0b0f19] flex flex-col">
-            <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-800/80">
+          {/* Права частина — відображення результатів */}
+          <section className="flex-1 bg-[#0b0f19] p-6 overflow-y-auto flex flex-col">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5 text-indigo-400" /> Згенеровані креативи
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  🖼️ Згенеровані креативи
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">Усього згенеровано: {images.length} результатів</p>
+                <p className="text-xs text-gray-500">
+                  Усього згенеровано: {generatedImages.length} результатів
+                </p>
               </div>
 
-              <div className="flex items-center gap-4 text-xs text-slate-400">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="rounded bg-slate-900 border-slate-800 text-indigo-600" />
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Safe Zones (Stories/Reels)</span>
-                </label>
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <input type="checkbox" id="safezones" className="rounded bg-gray-800 border-gray-700" />
+                <label htmlFor="safezones">Safe Zones (Stories/Reels)</label>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {images.map((imgUrl, index) => (
-                <div key={index} className="bg-[#0d1322] border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-slate-700 transition">
-                  <div className="relative aspect-square bg-slate-900 flex items-center justify-center overflow-hidden">
-                    <span className="absolute top-3 left-3 bg-black/60 backdrop-blur text-[10px] font-mono px-2 py-1 rounded text-white font-bold">
-                      {aspectRatio} • {aspectRatio === "1:1" ? "FEED" : "FORMAT"}
-                    </span>
-                    <button className="absolute top-3 right-3 p-1.5 rounded-full bg-black/60 backdrop-blur text-slate-300 hover:text-white transition cursor-pointer">
-                      <Bookmark className="w-4 h-4" />
-                    </button>
-                    <img
-                      src={imgUrl}
-                      alt={`Generated Creative ${index + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                    />
-                  </div>
-                  <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
-                    <p className="text-xs text-slate-400 italic">
-                      "{prompt || "Згенероване зображення за вашим запитом"}"
-                    </p>
-                    <div className="flex flex-col gap-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <a 
-                          href={imgUrl} 
-                          target="_blank" 
-                          download={`creative-${index + 1}.png`} 
-                          className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition text-center cursor-pointer"
+            <div className="flex-1 flex items-center justify-center border-2 border-dashed border-gray-800/80 rounded-2xl p-6 bg-[#0f172a]/10">
+              {isLoading ? (
+                <div className="text-center">
+                  <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                  <p className="text-gray-300 font-medium">Нейромережа Flux створює креатив...</p>
+                  <p className="text-xs text-gray-500 mt-1">Зазвичай це займає 5–10 секунд</p>
+                </div>
+              ) : generatedImages.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+                  {generatedImages.map((imgUrl, index) => (
+                    <div
+                      key={index}
+                      className="group relative bg-[#131b2e] border border-gray-800 rounded-2xl overflow-hidden shadow-xl transition hover:border-gray-700 flex flex-col"
+                    >
+                      <div className="relative aspect-square w-full bg-black/40 overflow-hidden flex items-center justify-center">
+                        <img
+                          src={imgUrl}
+                          alt={`Generated Creative ${index + 1}`}
+                          className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
+                        />
+
+                        <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wider uppercase border border-white/10">
+                          {selectedFormat} • FORMAT
+                        </div>
+                      </div>
+
+                      <div className="p-4 flex flex-col gap-3">
+                        <p className="text-xs text-gray-400 line-clamp-2 italic">
+                          "{userPrompt}"
+                        </p>
+
+                        <button
+                          onClick={() => handleDownload(imgUrl, index)}
+                          className="w-full bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 text-indigo-200 hover:text-white font-medium py-2 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer"
                         >
-                          <Download className="w-3.5 h-3.5" /> Завантажити
-                        </a>
-                        <button className="py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer">
-                          <Type className="w-3.5 h-3.5" /> Додати Текст/Лого
+                          ⬇️ Завантажити зображення (PNG)
                         </button>
                       </div>
-                      <button className="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer">
-                        <FileText className="w-3.5 h-3.5" /> Рекламний текст
-                      </button>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="text-center text-gray-500">
+                  <p className="text-base font-medium text-gray-400">Результатів поки немає</p>
+                  <p className="text-xs mt-1">Введіть опис і натисніть «Згенерувати візуали»</p>
+                </div>
+              )}
             </div>
-          </main>
+          </section>
+        </main>
+      )}
+
+      {/* Вкладка Проєкти */}
+      {activeTab === "projects" && (
+        <div className="flex-1 p-8 max-w-6xl mx-auto w-full">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">📁 Проєкти та Клієнти</h2>
+              <p className="text-sm text-gray-400">Організовуйте рекламні креативи по папкам клієнтів</p>
+            </div>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition"
+            >
+              + Новий проєкт
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-[#1e293b]/40 border border-gray-800 p-5 rounded-2xl">
+              <h3 className="font-bold text-lg mb-1">Стоматологія "Smile"</h3>
+              <p className="text-xs text-gray-400 mb-4">12 рекламних креативів</p>
+              <button className="text-xs text-indigo-400 hover:underline font-medium">Переглянути папку ➔</button>
+            </div>
+            <div className="bg-[#1e293b]/40 border border-gray-800 p-5 rounded-2xl">
+              <h3 className="font-bold text-lg mb-1">ЖК "Комфорт Таун"</h3>
+              <p className="text-xs text-gray-400 mb-4">8 рекламних креативів</p>
+              <button className="text-xs text-indigo-400 hover:underline font-medium">Переглянути папку ➔</button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Вкладка 2: Бібліотека промптів */}
+      {/* Вкладка Бібліотека промптів */}
       {activeTab === "prompts" && (
-        <main className="flex-1 p-6 bg-[#0b0f19] overflow-y-auto">
-          <div className="max-w-5xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Bookmark className="w-5 h-5 text-indigo-400" /> Бібліотека готових промптів
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">Готові високоефективні формулювання для різних ніш</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { title: "Стоматологія / Вініри", prompt: "Aesthetic dental clinic advertisement, smiling woman with white teeth, bright soft studio light, luxury interior, highly detailed, 8k --ar 1:1" },
-                { title: "Косметика / Сироватка", prompt: "Luxury serum bottle on clean beige stone, tropical palm shadow, water drops, cinematic lighting, editorial aesthetic, 8k" },
-                { title: "Нерухомість / ЖК", prompt: "Modern luxury apartment living room, panoramic windows, sunset light, high-end furniture, architectural design photography" },
-                { title: "Доставка їжі / Суші", prompt: "Fresh salmon sushi roll set, close up macro shot, dark background, neon bokeh lights, appetizing commercial food photography" },
-                { title: "Салон краси / Зачіски", prompt: "Professional hair salon model, shiny healthy blonde hair, soft studio ring light, high-end beauty magazine style" },
-                { title: "Автодетейлінг", prompt: "Luxury sports car polished shiny surface, dark garage with LED neon strip lights, cinematic reflections, 8k detail" }
-              ].map((item, i) => (
-                <div key={i} className="bg-[#0d1322] border border-slate-800 p-4 rounded-xl space-y-3">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-sm text-indigo-300">{item.title}</h3>
-                    <button 
-                      onClick={() => {
-                        setPrompt(item.prompt);
-                        changeTab("generator");
-                      }}
-                      className="text-xs bg-indigo-600/20 hover:bg-indigo-600 text-indigo-200 px-2.5 py-1 rounded-lg border border-indigo-500/30 transition flex items-center gap-1 cursor-pointer"
-                    >
-                      <Copy className="w-3 h-3" /> Вставити в генератор
-                    </button>
-                  </div>
-                  <p className="text-xs text-slate-300 bg-slate-950 p-2.5 rounded-lg border border-slate-800 font-mono">{item.prompt}</p>
-                </div>
-              ))}
+        <div className="flex-1 p-8 max-w-6xl mx-auto w-full">
+          <h2 className="text-2xl font-bold mb-2">🔖 Готові рекламні шаблони</h2>
+          <p className="text-sm text-gray-400 mb-6">Використовуйте перевірені промпти для підвищення конверсії</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-[#1e293b]/30 border border-gray-800 p-4 rounded-xl">
+              <span className="text-xs font-bold text-indigo-400 uppercase">Beauty & Spa</span>
+              <p className="text-sm mt-2 text-gray-200">"Modern luxury aesthetic cosmetology clinic, clean minimalist design, soft pastel lighting..."</p>
             </div>
           </div>
-        </main>
+        </div>
       )}
 
-      {/* Вкладка 3: Історія та Обране */}
+      {/* Вкладка Історія */}
       {activeTab === "history" && (
-        <main className="flex-1 p-6 bg-[#0b0f19] overflow-y-auto">
-          <div className="max-w-5xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-indigo-400" /> Історія генерацій та Обране
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">Усі згенеровані раніше макети зберігаються тут</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {images.map((img, idx) => (
-                <div key={idx} className="bg-[#0d1322] border border-slate-800 rounded-xl overflow-hidden p-2 space-y-2">
-                  <img src={img} className="w-full aspect-square object-cover rounded-lg" alt="Saved" />
-                  <p className="text-[10px] text-slate-400 truncate">Збережено в історії</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </main>
+        <div className="flex-1 p-8 max-w-6xl mx-auto w-full">
+          <h2 className="text-2xl font-bold mb-2">📚 Історія генерацій</h2>
+          <p className="text-sm text-gray-400">Усі ваші раніше згенеровані матеріали збережені тут</p>
+        </div>
       )}
 
-      {/* Вкладка 4: Проєкти & Клієнти */}
-      {activeTab === "projects" && (
-        <main className="flex-1 p-6 bg-[#0b0f19] overflow-y-auto">
-          <div className="max-w-5xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Folder className="w-5 h-5 text-indigo-400" /> Управління проєктами та клієнтами
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">Створюйте окремі папки під кожного клієнта</p>
-              </div>
-              <button 
-                onClick={() => setIsModalOpen(true)}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-indigo-600/20"
-              >
-                <Plus className="w-4 h-4" /> Новий проєкт
-              </button>
-            </div>
-
-            {selectedProject ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between bg-[#0d1322] p-4 rounded-xl border border-slate-800">
-                  <div className="flex items-center gap-3">
-                    <FolderOpen className="w-6 h-6 text-indigo-400" />
-                    <div>
-                      <h3 className="font-bold text-white text-base">{selectedProject}</h3>
-                      <p className="text-xs text-slate-400">Робочий простір клієнта</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => changeTab("projects", null)}
-                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg transition cursor-pointer"
-                  >
-                    ← Назад до всіх проєктів
-                  </button>
-                </div>
-
-                <div className="p-8 border-2 border-dashed border-slate-800 rounded-2xl text-center space-y-3">
-                  <ImageIcon className="w-10 h-10 text-slate-600 mx-auto" />
-                  <p className="text-sm text-slate-300 font-medium">У цій папці поки немає збережених креативів</p>
-                  <button 
-                    onClick={() => changeTab("generator")}
-                    className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl transition font-medium cursor-pointer"
-                  >
-                    Згенерувати перший креатив для цього клієнта
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {projects.map((proj) => (
-                  <div 
-                    key={proj.id} 
-                    onClick={() => changeTab("projects", proj.name)}
-                    className="bg-[#0d1322] border border-slate-800 hover:border-indigo-500/50 p-4 rounded-xl flex items-center justify-between transition cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Folder className="w-8 h-8 text-indigo-400 group-hover:text-indigo-300 transition" />
-                      <div>
-                        <h4 className="font-semibold text-sm text-white">{proj.name}</h4>
-                        <p className="text-xs text-slate-400">{proj.count} креативів</p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={(e) => handleDeleteProject(proj.id, e)}
-                      title="Видалити проєкт"
-                      className="text-slate-600 hover:text-red-400 p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </main>
-      )}
-
-      {/* Модальне вікно */}
+      {/* Модальне вікно створення проєкту */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0d1322] border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <Folder className="w-5 h-5 text-indigo-400" /> Створити новий проєкт
-              </h3>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300">Назва проєкту або ім'я клієнта</label>
-              <input 
-                type="text"
-                placeholder="наприклад: Клієнт: Салон краси 'Elixir'"
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
-              />
-            </div>
-
-            <div className="flex gap-2 pt-2 justify-end">
-              <button 
+          <div className="bg-[#1e293b] border border-gray-700 p-6 rounded-2xl max-w-md w-full shadow-2xl">
+            <h3 className="text-lg font-bold mb-2">Створити новий проєкт</h3>
+            <p className="text-xs text-gray-400 mb-4">Введіть назву компанії або клієнта для групування креативів</p>
+            <input
+              type="text"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              placeholder="Наприклад: Кав'ярня 'Арома'"
+              className="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-3 text-sm text-white mb-5 focus:outline-none focus:border-indigo-500"
+            />
+            <div className="flex gap-2 justify-end">
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl transition cursor-pointer"
               >
                 Скасувати
               </button>
-              <button 
+              <button
                 onClick={handleAddProject}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition cursor-pointer"
               >
