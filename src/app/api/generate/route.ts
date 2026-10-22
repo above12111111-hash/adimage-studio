@@ -8,7 +8,7 @@ const replicate = new Replicate({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { prompt, aspectRatio, niche, style } = body;
+    const { prompt, aspectRatio, niche, style, image } = body;
 
     if (!prompt) {
       return NextResponse.json(
@@ -24,31 +24,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Спеціальний рекламний промпт для маркетологів та таргетологів
-    const adPrompt = `High-converting commercial advertisement banner for ${niche || "business"}. 
-    Main Subject: ${prompt}. 
-    Style: ${style || "Modern professional advertising design"}, studio lighting, 8k resolution, graphic design layout with space for text, catchy promotional visual, Instagram & Facebook ad template, highly detailed.`;
+    const adPrompt = `High-converting commercial advertisement banner for ${niche || "business"}. Main Subject: ${prompt}. Style: ${style || "Modern professional advertising design"}, studio lighting, 8k resolution, highly detailed, photorealistic.`;
 
     let aspect_ratio = "1:1";
     if (aspectRatio === "9:16") aspect_ratio = "9:16";
     if (aspectRatio === "4:5") aspect_ratio = "4:5";
+    if (aspectRatio === "1.91:1") aspect_ratio = "16:9";
 
-    // Запуск генерації через модель Flux Schnell
-    const output = await replicate.run(
-      "black-forest-labs/flux-schnell",
-      {
-        input: {
-          prompt: adPrompt,
-          aspect_ratio: aspect_ratio,
-          output_format: "png",
-          output_quality: 95,
-        }
-      }
-    );
+    const inputData: any = {
+      prompt: adPrompt,
+      aspect_ratio: aspect_ratio,
+      output_format: "png",
+      output_quality: 95,
+    };
 
-    const imageUrls = Array.isArray(output) ? output : [output];
+    if (image) {
+      inputData.image = image;
+    }
 
-    return NextResponse.json({ images: imageUrls });
+    const output = await replicate.run("black-forest-labs/flux-schnell", {
+      input: inputData,
+    });
+
+    let imageUrl = "";
+    if (Array.isArray(output)) {
+      imageUrl = String(output[0]);
+    } else if (typeof output === "string") {
+      imageUrl = output;
+    } else {
+      imageUrl = String(output);
+    }
+
+    return NextResponse.json({ images: [imageUrl] });
   } catch (error: any) {
     console.error("Replicate API Error:", error);
     return NextResponse.json(
