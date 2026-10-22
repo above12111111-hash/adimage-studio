@@ -19,7 +19,6 @@ export default function AdImageStudio() {
   const [newProjectName, setNewProjectName] = useState("");
   const [savedFavorites, setSavedFavorites] = useState<string[]>([]);
 
-  // Стан та реф для завантаження референсу
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -31,7 +30,6 @@ export default function AdImageStudio() {
     );
   };
 
-  // Обробка завантаження референсного фото (Image-to-Image)
   const handleReferenceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -86,7 +84,6 @@ export default function AdImageStudio() {
     }
   };
 
-  // Пряме завантаження файлу без блокування браузером
   const handleDownload = async (imageUrl: string, index: number = 0) => {
     try {
       const response = await fetch(imageUrl);
@@ -124,6 +121,7 @@ export default function AdImageStudio() {
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col">
+      {/* Шапка сайту */}
       <header className="border-b border-gray-800 bg-[#0f172a]/60 backdrop-blur px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <div className="bg-indigo-600 p-2 rounded-xl text-white font-bold text-xl shadow-lg shadow-indigo-500/30">
@@ -190,6 +188,7 @@ export default function AdImageStudio() {
         </div>
       </header>
 
+      {/* ВКЛАДКА 1: ГЕНЕРАТОР */}
       {activeTab === "generator" && (
         <main className="flex-1 flex overflow-hidden">
           <aside className="w-[440px] border-r border-gray-800/80 bg-[#0f172a]/30 p-5 overflow-y-auto flex flex-col gap-5 text-xs">
@@ -319,7 +318,6 @@ export default function AdImageStudio() {
               </div>
             </div>
 
-            {/* Завантаження референсного зображення */}
             <div>
               <label className="font-semibold text-gray-300 uppercase tracking-wider block mb-2">
                 Референсне фото / Товар (Image-to-Image)
@@ -343,7 +341,7 @@ export default function AdImageStudio() {
                       className="w-12 h-12 object-cover rounded-lg border border-indigo-500"
                     />
                     <span className="text-xs text-indigo-400 font-medium">
-                      Фото завантажено (натисніть, щоб змінити)
+                      Фото завантажено
                     </span>
                     <button
                       onClick={(e) => {
@@ -418,6 +416,16 @@ export default function AdImageStudio() {
                           alt={`Generated Creative ${index + 1}`}
                           className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                         />
+                        <button
+                          onClick={() => handleToggleFavorite(imgUrl)}
+                          className={`absolute top-3 right-3 p-2 rounded-xl backdrop-blur-md border transition cursor-pointer ${
+                            savedFavorites.includes(imgUrl)
+                              ? "bg-amber-500 text-white border-amber-400"
+                              : "bg-black/50 text-gray-300 border-white/10 hover:text-white"
+                          }`}
+                        >
+                          ★
+                        </button>
                       </div>
 
                       <div className="p-4 flex flex-col gap-3">
@@ -448,6 +456,164 @@ export default function AdImageStudio() {
             </div>
           </section>
         </main>
+      )}
+
+      {/* ВКЛАДКА 2: БІБЛІОТЕКА ПРОМПТІВ */}
+      {activeTab === "prompts" && (
+        <div className="flex-1 p-8 max-w-6xl mx-auto w-full">
+          <h2 className="text-2xl font-bold mb-2">🔖 Готові рекламні шаблони</h2>
+          <p className="text-sm text-gray-400 mb-6">
+            Натисніть на будь-який шаблон, щоб автоматично підставити його у генератор
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              {
+                title: "Будівництво & Нерухомість",
+                prompt:
+                  "Modern luxury high-tech villa with swimming pool, evening warm lighting, architectural photography, 8k resolution",
+              },
+              {
+                title: "Стоматологія & Медицина",
+                prompt:
+                  "Aesthetic dental clinic advertisement, smiling woman with white teeth, bright soft studio light, luxury interior",
+              },
+              {
+                title: "E-Commerce / Товари",
+                prompt:
+                  "Commercial product photography of premium cosmetic bottle on water reflection background, studio lighting, highly detailed",
+              },
+              {
+                title: "Кав'ярня & Ресторани",
+                prompt:
+                  "Fresh cup of cappuccino with latte art, croissant on wooden table, warm cozy morning coffee shop environment",
+              },
+            ].map((item, index) => (
+              <div
+                key={index}
+                onClick={() => {
+                  setUserPrompt(item.prompt);
+                  setActiveTab("generator");
+                }}
+                className="bg-[#1e293b]/30 border border-gray-800 p-5 rounded-2xl hover:border-indigo-500/50 cursor-pointer transition flex flex-col justify-between"
+              >
+                <div>
+                  <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">
+                    {item.title}
+                  </span>
+                  <p className="text-sm text-gray-200 italic">"{item.prompt}"</p>
+                </div>
+                <span className="text-xs text-indigo-400 mt-4 font-medium flex items-center gap-1">
+                  Використати у генераторі ➔
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ВКЛАДКА 3: ІСТОРІЯ ТА ОБРАНЕ */}
+      {activeTab === "history" && (
+        <div className="flex-1 p-8 max-w-6xl mx-auto w-full">
+          <h2 className="text-2xl font-bold mb-2">📚 Обрані креативи</h2>
+          <p className="text-sm text-gray-400 mb-6">Ваші збережені рекламні візуали</p>
+
+          {savedFavorites.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {savedFavorites.map((url, idx) => (
+                <div
+                  key={idx}
+                  className="bg-[#131b2e] border border-gray-800 rounded-2xl overflow-hidden p-3 flex flex-col gap-3"
+                >
+                  <img
+                    src={url}
+                    alt="Saved"
+                    className="w-full aspect-square object-cover rounded-xl"
+                  />
+                  <button
+                    onClick={() => handleDownload(url, idx)}
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-xl text-xs transition cursor-pointer"
+                  >
+                    ⬇️ Скачати PNG
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">
+              Ви поки не додавали матеріали в обране. Натискайте зірочку ★ на згенерованих фото!
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ВКЛАДКА 4: ПРОЄКТИ */}
+      {activeTab === "projects" && (
+        <div className="flex-1 p-8 max-w-6xl mx-auto w-full">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">📁 Проєкти та Клієнти</h2>
+              <p className="text-sm text-gray-400">
+                Організовуйте рекламні креативи по папкам клієнтів
+              </p>
+            </div>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer"
+            >
+              + Новий проєкт
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-[#1e293b]/40 border border-gray-800 p-5 rounded-2xl hover:border-gray-700 transition">
+              <h3 className="font-bold text-lg mb-1">ЖК "Комфорт Таун"</h3>
+              <p className="text-xs text-gray-400 mb-4">14 рекламних креативів</p>
+              <button className="text-xs text-indigo-400 hover:underline font-medium cursor-pointer">
+                Переглянути папку ➔
+              </button>
+            </div>
+            <div className="bg-[#1e293b]/40 border border-gray-800 p-5 rounded-2xl hover:border-gray-700 transition">
+              <h3 className="font-bold text-lg mb-1">Стоматологія "Smile"</h3>
+              <p className="text-xs text-gray-400 mb-4">8 рекламних креативів</p>
+              <button className="text-xs text-indigo-400 hover:underline font-medium cursor-pointer">
+                Переглянути папку ➔
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальне вікно для проєктів */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1e293b] border border-gray-700 p-6 rounded-2xl max-w-md w-full shadow-2xl">
+            <h3 className="text-lg font-bold mb-2">Створити новий проєкт</h3>
+            <p className="text-xs text-gray-400 mb-4">
+              Введіть назву компанії або клієнта для групування креативів
+            </p>
+            <input
+              type="text"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              placeholder="Наприклад: ЖК 'Комфорт Таун'"
+              className="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-3 text-sm text-white mb-5 focus:outline-none focus:border-indigo-500"
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl transition cursor-pointer"
+              >
+                Скасувати
+              </button>
+              <button
+                onClick={handleAddProject}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition cursor-pointer"
+              >
+                Створити
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
