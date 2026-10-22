@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     if (!process.env.REPLICATE_API_TOKEN) {
       return NextResponse.json(
-        { error: "API-ключ REPLICATE_API_TOKEN не налаштовано на сервері." },
+        { error: "API-ключ REPLICATE_API_TOKEN не налаштовано." },
         { status: 500 }
       );
     }
@@ -38,31 +38,32 @@ export async function POST(req: NextRequest) {
       output_quality: 95,
     };
 
+    // Якщо користувач завантажив референс, додаємо його до запиту
     if (image) {
       inputData.image = image;
     }
 
-    // Запуск генерації в Replicate
     const output: any = await replicate.run("black-forest-labs/flux-schnell", {
       input: inputData,
     });
 
-    // Отримуємо URL з результату
-    let rawUrl = "";
+    // БЕЗПЕЧНЕ ВИЛУЧЕННЯ URL (підтримує і старі, і нові версії Replicate)
+    let finalUrl = "";
+    
     if (Array.isArray(output) && output.length > 0) {
-      rawUrl = String(output[0]);
+      // Якщо це об'єкт потоку, викликаємо функцію .url()
+      finalUrl = typeof output[0].url === "function" ? output[0].url() : String(output[0]);
     } else if (typeof output === "string") {
-      rawUrl = output;
-    } else {
-      rawUrl = String(output);
+      finalUrl = output;
+    } else if (output && output.url) {
+      finalUrl = typeof output.url === "function" ? output.url() : String(output.url);
     }
 
-    // Завантажуємо зображення на сервері та конвертуємо в Base64 (щоб обійти CORS і биті посилання)
-    const imgResponse = await fetch(rawUrl);
-    const arrayBuffer = await imgResponse.arrayBuffer();
-    const base64Image = `data:image/png;base64,${Buffer.from(arrayBuffer).toString("base64")}`;
+    if (!finalUrl || finalUrl === "null" || finalUrl === "undefined") {
+      throw new Error("Не вдалося отримати коректне посилання на фото від Replicate.");
+    }
 
-    return NextResponse.json({ images: [base64Image] });
+    return NextResponse.json({ images: [finalUrl] });
   } catch (error: any) {
     console.error("Replicate API Error:", error);
     return NextResponse.json(
