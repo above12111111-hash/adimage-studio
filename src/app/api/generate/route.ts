@@ -42,20 +42,27 @@ export async function POST(req: NextRequest) {
       inputData.image = image;
     }
 
-    const output = await replicate.run("black-forest-labs/flux-schnell", {
+    // Запуск генерації в Replicate
+    const output: any = await replicate.run("black-forest-labs/flux-schnell", {
       input: inputData,
     });
 
-    let imageUrl = "";
-    if (Array.isArray(output)) {
-      imageUrl = String(output[0]);
+    // Отримуємо URL з результату
+    let rawUrl = "";
+    if (Array.isArray(output) && output.length > 0) {
+      rawUrl = String(output[0]);
     } else if (typeof output === "string") {
-      imageUrl = output;
+      rawUrl = output;
     } else {
-      imageUrl = String(output);
+      rawUrl = String(output);
     }
 
-    return NextResponse.json({ images: [imageUrl] });
+    // Завантажуємо зображення на сервері та конвертуємо в Base64 (щоб обійти CORS і биті посилання)
+    const imgResponse = await fetch(rawUrl);
+    const arrayBuffer = await imgResponse.arrayBuffer();
+    const base64Image = `data:image/png;base64,${Buffer.from(arrayBuffer).toString("base64")}`;
+
+    return NextResponse.json({ images: [base64Image] });
   } catch (error: any) {
     console.error("Replicate API Error:", error);
     return NextResponse.json(
